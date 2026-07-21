@@ -46,6 +46,17 @@ export function CrmSidebar() {
       .catch(() => {})
   }, [])
 
+  const [chatUnread, setChatUnread] = useState(true)
+  const canAdmin = userCargo.toUpperCase().includes("ASSISTENTE FINANCEIRO") || userCargo.toUpperCase().includes("GERENTE")
+  const isChatPage = pathname.startsWith("/crm/chat")
+
+  useEffect(() => {
+    const stored = localStorage.getItem("klaws_chat_read")
+    if (stored === "true" || isChatPage) {
+      setChatUnread(false)
+    }
+  }, [isChatPage])
+
   async function handleSignOut() {
     const supabase = createClient()
     await supabase.auth.signOut()
@@ -92,6 +103,7 @@ export function CrmSidebar() {
           
           <Link
             href="/crm/chat"
+            onClick={() => { setChatUnread(false); localStorage.setItem("klaws_chat_read", "true") }}
             className={`flex items-center justify-between rounded-lg px-3 py-2.5 text-sm font-medium transition-all duration-200 ${
               pathname.startsWith("/crm/chat")
                 ? "bg-[#1f2136] text-white shadow-sm"
@@ -102,9 +114,11 @@ export function CrmSidebar() {
               <MessageSquare className="h-4 w-4" />
               Chat de Atendimento
             </div>
-            <span className="flex h-5 w-5 items-center justify-center rounded-full bg-rose-500 text-[10px] font-bold text-white">
-              1
-            </span>
+            {chatUnread && (
+              <span className="flex h-5 w-5 items-center justify-center rounded-full bg-rose-500 text-[10px] font-bold text-white">
+                1
+              </span>
+            )}
           </Link>
 
           <div className="flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium text-slate-500 cursor-not-allowed opacity-60">
@@ -152,23 +166,24 @@ export function CrmSidebar() {
           </div>
         </div>
 
-        {/* Admin */}
-        <div className="space-y-1">
-          <div className="px-3 text-[10px] font-bold uppercase tracking-wider text-slate-500">
-            Administração
+        {canAdmin && (
+          <div className="space-y-1">
+            <div className="px-3 text-[10px] font-bold uppercase tracking-wider text-slate-500">
+              Administração
+            </div>
+            <Link
+              href="/admin"
+              className={`flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-all duration-200 ${
+                pathname === "/admin"
+                  ? "bg-[#1f2136] text-white shadow-sm"
+                  : "text-slate-400 hover:text-slate-100 hover:bg-[#171928]"
+              }`}
+            >
+              <Settings className="h-4 w-4" />
+              Usuários
+            </Link>
           </div>
-          <Link
-            href="/admin"
-            className={`flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-all duration-200 ${
-              pathname === "/admin"
-                ? "bg-[#1f2136] text-white shadow-sm"
-                : "text-slate-400 hover:text-slate-100 hover:bg-[#171928]"
-            }`}
-          >
-            <Settings className="h-4 w-4" />
-            Usuários
-          </Link>
-        </div>
+        )}
       </div>
 
       {/* Separador e Rodapé com Perfil */}
