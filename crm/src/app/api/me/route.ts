@@ -20,17 +20,19 @@ export async function GET(req: Request) {
   let name = ""
   let cargo = ""
   let email = ""
+  let avatarUrl = ""
 
   try {
     const { data: profile } = await admin
       .from("profiles")
-      .select("full_name, cargo, email")
+      .select("full_name, cargo, email, avatar_url")
       .eq("id", userId)
       .maybeSingle()
     if (profile) {
       name = profile.full_name || ""
       cargo = profile.cargo || ""
       email = profile.email || ""
+      avatarUrl = profile.avatar_url || ""
     }
   } catch {
     // cargo column may not exist yet
@@ -50,5 +52,5 @@ export async function GET(req: Request) {
     }
   }
 
-  return NextResponse.json({ id: userId, email, name, cargo })
+  return NextResponse.json({ id: userId, email, name, cargo, avatar_url: avatarUrl })
 }

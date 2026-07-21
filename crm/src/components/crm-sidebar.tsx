@@ -14,6 +14,7 @@ import {
   CheckSquare, 
   Calendar, 
   Users, 
+  User,
   TrendingUp, 
   FolderGit2, 
   Settings, 
@@ -27,6 +28,7 @@ export function CrmSidebar() {
   const [email, setEmail] = useState<string>("")
   const [userName, setUserName] = useState("")
   const [userCargo, setUserCargo] = useState("")
+  const [avatarUrl, setAvatarUrl] = useState("")
 
   useEffect(() => {
     const supabase = createClient()
@@ -42,6 +44,7 @@ export function CrmSidebar() {
       .then((data) => {
         if (data.name) setUserName(data.name)
         if (data.cargo) setUserCargo(data.cargo)
+        if (data.avatar_url) setAvatarUrl(data.avatar_url)
       })
       .catch(() => {})
   }, [])
@@ -155,6 +158,18 @@ export function CrmSidebar() {
             Suporte
           </div>
           
+          <Link
+            href="/crm/perfil"
+            className={`flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-all duration-200 ${
+              pathname === "/crm/perfil"
+                ? "bg-[#1f2136] text-white shadow-sm"
+                : "text-slate-400 hover:text-slate-100 hover:bg-[#171928]"
+            }`}
+          >
+            <User className="h-4 w-4" />
+            Perfil
+          </Link>
+
           <div className="flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium text-slate-400 hover:text-slate-100 hover:bg-[#171928] cursor-pointer">
             <HelpCircle className="h-4 w-4" />
             Ajuda & FAQ
@@ -190,9 +205,13 @@ export function CrmSidebar() {
       <div className="p-3 border-t border-[#1e2030] bg-[#0e1019]">
         <div className="flex items-center gap-3 p-1.5 rounded-xl hover:bg-[#171928] transition-colors duration-200">
           <Avatar className="h-9 w-9 border border-[#1e2030]">
-            <AvatarFallback className="bg-gradient-to-tr from-indigo-500 to-purple-500 text-white text-xs font-semibold">
-              {initials}
-            </AvatarFallback>
+            {avatarUrl ? (
+              <img src={avatarUrl} alt="Avatar" className="h-full w-full object-cover rounded-full" />
+            ) : (
+              <AvatarFallback className="bg-gradient-to-tr from-indigo-500 to-purple-500 text-white text-xs font-semibold">
+                {initials}
+              </AvatarFallback>
+            )}
           </Avatar>
           <div className="flex-1 min-w-0">
             <p className="text-xs font-semibold text-white truncate capitalize">{displayName}</p>
