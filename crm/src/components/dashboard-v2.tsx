@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
-import { Trophy, DollarSign, CheckCircle, XCircle, TrendingUp, Medal, Target, Users, Crown } from "lucide-react"
+import { Trophy, DollarSign, CheckCircle, XCircle, TrendingUp, Medal, Target, Users, ShieldAlert } from "lucide-react"
 
 type Venda = {
   promotor_vendas: string
@@ -25,6 +25,11 @@ type Totais = {
   totalVendas: number
   totalHomologados: number
   totalAdimp: number
+}
+
+type Acesso = {
+  vendas: boolean
+  adimplencia: boolean
 }
 
 const gradients = [
@@ -58,16 +63,24 @@ export function DashboardV2() {
   const [vendas, setVendas] = useState<Venda[]>([])
   const [adimplencia, setAdimplencia] = useState<Adimplencia[]>([])
   const [totais, setTotais] = useState<Totais>({ totalVendas: 0, totalHomologados: 0, totalAdimp: 0 })
+  const [acesso, setAcesso] = useState<Acesso>({ vendas: true, adimplencia: true })
+  const [userCargo, setUserCargo] = useState("")
   const [loading, setLoading] = useState(true)
   const [activeRanking, setActiveRanking] = useState<"vendas" | "adimplencia">("vendas")
 
   useEffect(() => {
-    fetch("/api/dashboard")
-      .then((r) => r.json())
-      .then((data) => {
-        setVendas(data.vendasRanking || [])
-        setAdimplencia(data.adimplenciaRanking || [])
-        if (data.totais) setTotais(data.totais)
+    Promise.all([
+      fetch("/api/dashboard").then((r) => r.json()),
+      fetch("/api/me").then((r) => r.json()),
+    ])
+      .then(([dashboard, me]) => {
+        setVendas(dashboard.vendasRanking || [])
+        setAdimplencia(dashboard.adimplenciaRanking || [])
+        if (dashboard.totais) setTotais(dashboard.totais)
+        if (dashboard.acesso) setAcesso(dashboard.acesso)
+        if (me.cargo) setUserCargo(me.cargo)
+        if (dashboard.acesso?.vendas) setActiveRanking("vendas")
+        else if (dashboard.acesso?.adimplencia) setActiveRanking("adimplencia")
       })
       .catch(console.error)
       .finally(() => setLoading(false))
@@ -87,86 +100,104 @@ export function DashboardV2() {
     <div className="flex-1 overflow-y-auto bg-[#f8f9fc] font-sans">
       <div className="p-8 max-w-7xl mx-auto space-y-8">
         {/* Header */}
-        <div>
-          <h1 className="text-2xl font-bold text-slate-800 tracking-tight">Dashboard</h1>
-          <p className="text-sm text-slate-400 mt-1">Acompanhe os indicadores de vendas e adimplência</p>
+        <div className="flex items-center justify-between">
+          <div>
+            <h1 className="text-2xl font-bold text-slate-800 tracking-tight">Dashboard</h1>
+            <p className="text-sm text-slate-400 mt-1">Acompanhe os indicadores da sua equipe</p>
+          </div>
+          {userCargo && (
+            <div className="flex items-center gap-2 bg-white border border-slate-200 rounded-xl px-4 py-2 shadow-sm">
+              <ShieldAlert className="h-4 w-4 text-indigo-500" />
+              <span className="text-sm font-medium text-slate-600">{userCargo}</span>
+            </div>
+          )}
         </div>
 
         {/* Cards de Resumo */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
-          <div className="bg-white rounded-xl border border-slate-200 p-5 shadow-sm">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-xs font-semibold text-slate-400 uppercase tracking-wider">Total de Vendas</p>
-                <p className="text-3xl font-bold text-slate-800 mt-1.5">{totais.totalVendas}</p>
+          {acesso.vendas && (
+            <div className="bg-white rounded-xl border border-slate-200 p-5 shadow-sm">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-xs font-semibold text-slate-400 uppercase tracking-wider">Total de Vendas</p>
+                  <p className="text-3xl font-bold text-slate-800 mt-1.5">{totais.totalVendas}</p>
+                </div>
+                <div className="h-11 w-11 rounded-xl bg-emerald-50 text-emerald-500 flex items-center justify-center">
+                  <TrendingUp className="h-5 w-5" />
+                </div>
               </div>
-              <div className="h-11 w-11 rounded-xl bg-emerald-50 text-emerald-500 flex items-center justify-center">
-                <TrendingUp className="h-5 w-5" />
+              <div className="mt-3 flex items-center gap-2 text-xs text-slate-400">
+                <Target className="h-3.5 w-3.5" />
+                <span>{vendas.length} vendedores ativos</span>
               </div>
             </div>
-            <div className="mt-3 flex items-center gap-2 text-xs text-slate-400">
-              <Target className="h-3.5 w-3.5" />
-              <span>{vendas.length} vendedores ativos</span>
-            </div>
-          </div>
+          )}
 
-          <div className="bg-white rounded-xl border border-slate-200 p-5 shadow-sm">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-xs font-semibold text-slate-400 uppercase tracking-wider">Homologados</p>
-                <p className="text-3xl font-bold text-slate-800 mt-1.5">{totais.totalHomologados}</p>
+          {acesso.vendas && (
+            <div className="bg-white rounded-xl border border-slate-200 p-5 shadow-sm">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-xs font-semibold text-slate-400 uppercase tracking-wider">Homologados</p>
+                  <p className="text-3xl font-bold text-slate-800 mt-1.5">{totais.totalHomologados}</p>
+                </div>
+                <div className="h-11 w-11 rounded-xl bg-blue-50 text-blue-500 flex items-center justify-center">
+                  <CheckCircle className="h-5 w-5" />
+                </div>
               </div>
-              <div className="h-11 w-11 rounded-xl bg-blue-50 text-blue-500 flex items-center justify-center">
-                <CheckCircle className="h-5 w-5" />
+              <div className="mt-3 flex items-center gap-2 text-xs text-slate-400">
+                <Users className="h-3.5 w-3.5" />
+                <span>{totais.totalVendas > 0 ? ((totais.totalHomologados / totais.totalVendas) * 100).toFixed(1) : 0}% de aprovação</span>
               </div>
             </div>
-            <div className="mt-3 flex items-center gap-2 text-xs text-slate-400">
-              <Users className="h-3.5 w-3.5" />
-              <span>{totais.totalVendas > 0 ? ((totais.totalHomologados / totais.totalVendas) * 100).toFixed(1) : 0}% de aprovação</span>
-            </div>
-          </div>
+          )}
 
-          <div className="bg-white rounded-xl border border-slate-200 p-5 shadow-sm">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-xs font-semibold text-slate-400 uppercase tracking-wider">Adimplência</p>
-                <p className="text-3xl font-bold text-slate-800 mt-1.5">R$ {totais.totalAdimp.toFixed(0)}</p>
+          {acesso.adimplencia && (
+            <div className="bg-white rounded-xl border border-slate-200 p-5 shadow-sm">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-xs font-semibold text-slate-400 uppercase tracking-wider">Adimplência</p>
+                  <p className="text-3xl font-bold text-slate-800 mt-1.5">R$ {totais.totalAdimp.toFixed(0)}</p>
+                </div>
+                <div className="h-11 w-11 rounded-xl bg-amber-50 text-amber-500 flex items-center justify-center">
+                  <DollarSign className="h-5 w-5" />
+                </div>
               </div>
-              <div className="h-11 w-11 rounded-xl bg-amber-50 text-amber-500 flex items-center justify-center">
-                <DollarSign className="h-5 w-5" />
+              <div className="mt-3 flex items-center gap-2 text-xs text-slate-400">
+                <Medal className="h-3.5 w-3.5" />
+                <span>{adimplencia.length} colaboradores</span>
               </div>
             </div>
-            <div className="mt-3 flex items-center gap-2 text-xs text-slate-400">
-              <Medal className="h-3.5 w-3.5" />
-              <span>{adimplencia.length} colaboradores</span>
-            </div>
-          </div>
+          )}
         </div>
 
         {/* Alternador de Abas */}
         <div className="flex gap-4 border-b border-slate-200">
-          <button
-            onClick={() => setActiveRanking("vendas")}
-            className={`pb-3 text-sm font-semibold border-b-2 transition-all ${
-              activeRanking === "vendas"
-                ? "border-emerald-500 text-emerald-600"
-                : "border-transparent text-slate-400 hover:text-slate-600"
-            }`}
-          >
-            <Trophy className="h-4 w-4 inline mr-1.5" />
-            Ranking de Vendas
-          </button>
-          <button
-            onClick={() => setActiveRanking("adimplencia")}
-            className={`pb-3 text-sm font-semibold border-b-2 transition-all ${
-              activeRanking === "adimplencia"
-                ? "border-emerald-500 text-emerald-600"
-                : "border-transparent text-slate-400 hover:text-slate-600"
-            }`}
-          >
-            <DollarSign className="h-4 w-4 inline mr-1.5" />
-            Ranking de Adimplência
-          </button>
+          {acesso.vendas && (
+            <button
+              onClick={() => setActiveRanking("vendas")}
+              className={`pb-3 text-sm font-semibold border-b-2 transition-all ${
+                activeRanking === "vendas"
+                  ? "border-emerald-500 text-emerald-600"
+                  : "border-transparent text-slate-400 hover:text-slate-600"
+              }`}
+            >
+              <Trophy className="h-4 w-4 inline mr-1.5" />
+              Ranking de Vendas
+            </button>
+          )}
+          {acesso.adimplencia && (
+            <button
+              onClick={() => setActiveRanking("adimplencia")}
+              className={`pb-3 text-sm font-semibold border-b-2 transition-all ${
+                activeRanking === "adimplencia"
+                  ? "border-emerald-500 text-emerald-600"
+                  : "border-transparent text-slate-400 hover:text-slate-600"
+              }`}
+            >
+              <DollarSign className="h-4 w-4 inline mr-1.5" />
+              Ranking de Adimplência
+            </button>
+          )}
         </div>
 
         {/* Top 3 Destacado */}
