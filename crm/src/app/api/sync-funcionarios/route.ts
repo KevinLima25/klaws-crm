@@ -38,10 +38,10 @@ export async function POST() {
     const userExists = existing?.users?.some((u) => u.email === email)
 
     if (userExists) {
-      const { data: existingUser } = await supabase.auth.admin.getUserByEmail(email)
-      if (existingUser?.user?.id) {
+      const found = existing?.users?.find((u) => u.email === email)
+      if (found?.id) {
         await supabase.from("profiles").upsert(
-          { id: existingUser.user.id, email, full_name: nome, cargo },
+          { id: found.id, email, full_name: nome, cargo },
           { onConflict: "id" }
         )
       }

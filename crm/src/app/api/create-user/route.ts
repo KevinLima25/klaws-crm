@@ -8,10 +8,12 @@ export async function POST(req: Request) {
   const supabase = createAdminClient()
   const pwd = password || email.split("@")[0] + "Kl@ws2026"
 
-  const { data: existing } = await supabase.auth.admin.getUserByEmail(email)
-  if (existing?.user) {
+  const { data: users } = await supabase.auth.admin.listUsers()
+  const existing = users?.users?.find((u) => u.email === email)
+
+  if (existing) {
     await supabase.from("profiles").upsert(
-      { id: existing.user.id, email, full_name: name, cargo },
+      { id: existing.id, email, full_name: name, cargo },
       { onConflict: "id" }
     )
     return NextResponse.json({ status: "updated", email, name, cargo })
