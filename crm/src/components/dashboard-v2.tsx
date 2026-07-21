@@ -1,6 +1,7 @@
 "use client"
 
 import { useEffect, useState } from "react"
+import { createClient } from "@/lib/supabase/client"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { Trophy, DollarSign, CheckCircle, XCircle, TrendingUp, Medal, Target, Users, ShieldAlert } from "lucide-react"
 
@@ -73,26 +74,35 @@ export function DashboardV2() {
   const [activeRanking, setActiveRanking] = useState<"vendas" | "adimplencia">("vendas")
 
   useEffect(() => {
+    const supabase = createClient()
+
     Promise.all([
       fetch("/api/dashboard").then((r) => {
         if (!r.ok) throw new Error("dashboard " + r.status)
         return r.json()
       }),
-      fetch("/api/me").then((r) => {
-        if (!r.ok) return { cargo: "" }
-        return r.json()
+      supabase.auth.getUser().then(async ({ data }) => {
+        const meta = data.user?.user_metadata || {}
+        if (meta.cargo) return meta.cargo
+        if (data.user?.id) {
+          const res = await fetch("/api/me?userId=" + data.user.id)
+          if (res.ok) {
+            const me = await res.json()
+            return me.cargo || ""
+          }
+        }
+        return ""
       }),
     ])
-      .then(([dashboard, me]) => {
+      .then(([dashboard, cargo]) => {
         setVendas(dashboard.vendasRanking || [])
         setAdimplencia(dashboard.adimplenciaRanking || [])
         if (dashboard.totais) setTotais(dashboard.totais)
-        const cargo = me.cargo || ""
         setUserCargo(cargo)
         if (canSeeVendas(cargo)) setActiveRanking("vendas")
         else if (canSeeAdimplencia(cargo)) setActiveRanking("adimplencia")
       })
-      .catch(console.error)
+      .catch((err) => console.error("Dashboard error:", err))
       .finally(() => setLoading(false))
   }, [])
 
