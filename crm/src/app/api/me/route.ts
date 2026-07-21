@@ -16,27 +16,39 @@ export async function GET(req: Request) {
   }
 
   const admin = createAdminClient()
-  const { data: profile } = await admin
-    .from("profiles")
-    .select("full_name, cargo, email")
-    .eq("id", userId)
-    .maybeSingle()
 
-  if (profile) {
-    return NextResponse.json({
-      id: userId,
-      email: profile.email,
-      name: profile.full_name || "",
-      cargo: profile.cargo || "",
-    })
+  let name = ""
+  let cargo = ""
+  let email = ""
+
+  try {
+    const { data: profile } = await admin
+      .from("profiles")
+      .select("full_name, cargo, email")
+      .eq("id", userId)
+      .maybeSingle()
+    if (profile) {
+      name = profile.full_name || ""
+      cargo = profile.cargo || ""
+      email = profile.email || ""
+    }
+  } catch {
+    // cargo column may not exist yet
   }
 
-  const { data: allUsers } = await admin.auth.admin.listUsers()
-  const u = allUsers?.users?.find((u: any) => u.id === userId)
-  return NextResponse.json({
-    id: userId,
-    email: u?.email || "",
-    name: u?.user_metadata?.name || u?.user_metadata?.full_name || "",
-    cargo: u?.user_metadata?.cargo || "",
-  })
+  if (!email || !name) {
+    try {
+      const { data: allUsers } = await admin.auth.admin.listUsers()
+      const u = allUsers?.users?.find((u: any) => u.id === userId)
+      if (u) {
+        email = email || u.email || ""
+        name = name || u.user_metadata?.name || u.user_metadata?.full_name || ""
+        cargo = cargo || u.user_metadata?.cargo || ""
+      }
+    } catch {
+      // ignore
+    }
+  }
+
+  return NextResponse.json({ id: userId, email, name, cargo })
 }
