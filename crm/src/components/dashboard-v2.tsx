@@ -27,11 +27,6 @@ type Totais = {
   totalAdimp: number
 }
 
-type Acesso = {
-  vendas: boolean
-  adimplencia: boolean
-}
-
 const gradients = [
   "from-emerald-400 to-teal-500",
   "from-violet-400 to-purple-500",
@@ -59,42 +54,59 @@ function getInitials(name: string) {
     .toUpperCase()
 }
 
+function canSeeVendas(cargo: string) {
+  const c = cargo?.toUpperCase() || ""
+  return c.includes("VENDEDOR") || c.includes("COORDENADOR") || c.includes("LIDER DE VENDAS") || c.includes("LÍDER DE VENDAS") || c.includes("GERENTE") || c.includes("ASSISTENTE FINANCEIRO")
+}
+
+function canSeeAdimplencia(cargo: string) {
+  const c = cargo?.toUpperCase() || ""
+  return c.includes("COBRANCA") || c.includes("COBRANÇA") || c.includes("GERENTE") || c.includes("ASSISTENTE FINANCEIRO")
+}
+
 export function DashboardV2() {
   const [vendas, setVendas] = useState<Venda[]>([])
   const [adimplencia, setAdimplencia] = useState<Adimplencia[]>([])
   const [totais, setTotais] = useState<Totais>({ totalVendas: 0, totalHomologados: 0, totalAdimp: 0 })
-  const [acesso, setAcesso] = useState<Acesso>({ vendas: true, adimplencia: true })
   const [userCargo, setUserCargo] = useState("")
   const [loading, setLoading] = useState(true)
   const [activeRanking, setActiveRanking] = useState<"vendas" | "adimplencia">("vendas")
 
   useEffect(() => {
     Promise.all([
-      fetch("/api/dashboard").then((r) => r.json()),
-      fetch("/api/me").then((r) => r.json()),
+      fetch("/api/dashboard").then((r) => {
+        if (!r.ok) throw new Error("dashboard " + r.status)
+        return r.json()
+      }),
+      fetch("/api/me").then((r) => {
+        if (!r.ok) return { cargo: "" }
+        return r.json()
+      }),
     ])
       .then(([dashboard, me]) => {
         setVendas(dashboard.vendasRanking || [])
         setAdimplencia(dashboard.adimplenciaRanking || [])
         if (dashboard.totais) setTotais(dashboard.totais)
-        if (dashboard.acesso) setAcesso(dashboard.acesso)
-        if (me.cargo) setUserCargo(me.cargo)
-        if (dashboard.acesso?.vendas) setActiveRanking("vendas")
-        else if (dashboard.acesso?.adimplencia) setActiveRanking("adimplencia")
+        const cargo = me.cargo || ""
+        setUserCargo(cargo)
+        if (canSeeVendas(cargo)) setActiveRanking("vendas")
+        else if (canSeeAdimplencia(cargo)) setActiveRanking("adimplencia")
       })
       .catch(console.error)
       .finally(() => setLoading(false))
   }, [])
+
+  const acessoVendas = canSeeVendas(userCargo)
+  const acessoAdimp = canSeeAdimplencia(userCargo)
+  const ranking = activeRanking === "vendas" ? vendas : adimplencia
+  const top3 = ranking.slice(0, 3)
+  const rest = ranking.slice(3)
 
   if (loading) return (
     <div className="flex-1 flex items-center justify-center bg-[#f8f9fc]">
       <div className="text-sm text-slate-400 font-medium">Carregando dashboard...</div>
     </div>
   )
-
-  const ranking = activeRanking === "vendas" ? vendas : adimplencia
-  const top3 = ranking.slice(0, 3)
-  const rest = ranking.slice(3)
 
   return (
     <div className="flex-1 overflow-y-auto bg-[#f8f9fc] font-sans">
@@ -115,7 +127,7 @@ export function DashboardV2() {
 
         {/* Cards de Resumo */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
-          {acesso.vendas && (
+          {acessoVendas && (
             <div className="bg-white rounded-xl border border-slate-200 p-5 shadow-sm">
               <div className="flex items-center justify-between">
                 <div>
@@ -133,7 +145,7 @@ export function DashboardV2() {
             </div>
           )}
 
-          {acesso.vendas && (
+          {acessoVendas && (
             <div className="bg-white rounded-xl border border-slate-200 p-5 shadow-sm">
               <div className="flex items-center justify-between">
                 <div>
@@ -151,7 +163,7 @@ export function DashboardV2() {
             </div>
           )}
 
-          {acesso.adimplencia && (
+          {acessoAdimp && (
             <div className="bg-white rounded-xl border border-slate-200 p-5 shadow-sm">
               <div className="flex items-center justify-between">
                 <div>
@@ -172,7 +184,7 @@ export function DashboardV2() {
 
         {/* Alternador de Abas */}
         <div className="flex gap-4 border-b border-slate-200">
-          {acesso.vendas && (
+          {acessoVendas && (
             <button
               onClick={() => setActiveRanking("vendas")}
               className={`pb-3 text-sm font-semibold border-b-2 transition-all ${
@@ -185,7 +197,7 @@ export function DashboardV2() {
               Ranking de Vendas
             </button>
           )}
-          {acesso.adimplencia && (
+          {acessoAdimp && (
             <button
               onClick={() => setActiveRanking("adimplencia")}
               className={`pb-3 text-sm font-semibold border-b-2 transition-all ${
