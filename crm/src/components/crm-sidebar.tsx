@@ -25,12 +25,25 @@ export function CrmSidebar() {
   const router = useRouter()
   const pathname = usePathname()
   const [email, setEmail] = useState<string>("")
+  const [userName, setUserName] = useState("")
+  const [userCargo, setUserCargo] = useState("")
 
   useEffect(() => {
     const supabase = createClient()
     supabase.auth.getUser().then(({ data }) => {
-      if (data.user?.email) setEmail(data.user.email)
+      if (data.user?.email) {
+        setEmail(data.user.email)
+        setUserName(data.user.user_metadata?.name || data.user.email?.split("@")[0] || "")
+        setUserCargo(data.user.user_metadata?.cargo || "")
+      }
     })
+    fetch("/api/me")
+      .then((r) => r.json())
+      .then((data) => {
+        if (data.name) setUserName(data.name)
+        if (data.cargo) setUserCargo(data.cargo)
+      })
+      .catch(() => {})
   }, [])
 
   async function handleSignOut() {
@@ -40,8 +53,11 @@ export function CrmSidebar() {
     router.refresh()
   }
 
-  const initials = email ? email.charAt(0).toUpperCase() : "?"
-  const displayName = email ? email.split("@")[0] : "Usuário"
+  const nameParts = userName.split(" ").filter(Boolean)
+  const firstName = nameParts[0] || ""
+  const secondName = nameParts[1] || ""
+  const displayName = [firstName, secondName].filter(Boolean).join(" ") || email?.split("@")[0] || "Usuário"
+  const initials = firstName ? firstName.charAt(0).toUpperCase() : email ? email.charAt(0).toUpperCase() : "?"
 
   return (
     <aside className="flex w-64 flex-col bg-[#131520] text-slate-300 font-sans border-r border-[#1e2030]">
@@ -166,6 +182,7 @@ export function CrmSidebar() {
           <div className="flex-1 min-w-0">
             <p className="text-xs font-semibold text-white truncate capitalize">{displayName}</p>
             <p className="text-[10px] text-slate-500 truncate">{email}</p>
+            {userCargo && <p className="text-[10px] text-indigo-400 truncate font-medium">{userCargo}</p>}
           </div>
           <Button 
             variant="ghost" 

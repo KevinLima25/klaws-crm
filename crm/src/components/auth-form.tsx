@@ -26,7 +26,7 @@ export function AuthForm({ serverError }: { serverError?: string }) {
         email,
         password,
         options: {
-          data: { name },
+          data: { name, full_name: name },
           emailRedirectTo: `${location.origin}/auth/callback`,
         },
       })
