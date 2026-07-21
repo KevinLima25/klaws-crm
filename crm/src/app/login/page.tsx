@@ -18,7 +18,7 @@ async function signIn(formData: FormData) {
     redirect(`/login?error=${encodeURIComponent(error.message)}`)
   }
 
-  redirect("/crm2")
+  redirect("/crm")
 }
 
 export default async function LoginPage(props: { searchParams?: Promise<{ error?: string }> }) {

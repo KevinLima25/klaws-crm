@@ -48,7 +48,7 @@ export function AuthForm({ serverError }: { serverError?: string }) {
         setError(error.message)
         setLoading(false)
       } else {
-        router.push("/crm2")
+        router.push("/crm")
         router.refresh()
       }
     }
