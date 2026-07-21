@@ -45,13 +45,13 @@ export function CrmSidebar() {
 
   return (
     <aside className="flex w-64 flex-col bg-[#131520] text-slate-300 font-sans border-r border-[#1e2030]">
-      {/* Header com Logo Nexus */}
+      {/* Header com Logo Klaws */}
       <div className="flex h-16 items-center justify-between px-4 border-b border-[#1e2030]">
         <div className="flex items-center gap-2.5">
           <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-gradient-to-tr from-indigo-500 via-purple-500 to-pink-500 text-white shadow-md shadow-purple-500/20">
             <TrendingUp className="h-4.5 w-4.5 stroke-[2.5]" />
           </div>
-          <span className="font-bold text-lg tracking-wide text-white font-sans">Nexus</span>
+          <span className="font-bold text-lg tracking-wide text-white font-sans">Klaws</span>
         </div>
         <Button variant="ghost" size="icon" className="h-8 w-8 text-slate-400 hover:text-white hover:bg-[#1c1e30]">
           <ChevronDown className="h-4 w-4" />
@@ -97,7 +97,7 @@ export function CrmSidebar() {
           </div>
         </div>
 
-        {/* Categoria Comercial (Mockup Nexus) */}
+        {/* Categoria Comercial (Mockup Klaws) */}
         <div className="space-y-1">
           <div className="px-3 text-[10px] font-bold uppercase tracking-wider text-slate-500">
             Comercial
@@ -119,7 +119,7 @@ export function CrmSidebar() {
           </div>
         </div>
 
-        {/* Categoria Suporte (Mockup Nexus) */}
+        {/* Categoria Suporte (Mockup Klaws) */}
         <div className="space-y-1">
           <div className="px-3 text-[10px] font-bold uppercase tracking-wider text-slate-500">
             Suporte

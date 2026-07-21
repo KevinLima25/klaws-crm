@@ -148,7 +148,7 @@ export function ChatInterfaceV2() {
 
   return (
     <div className="flex h-full flex-col bg-[#f8f9fc] font-sans">
-      {/* Top Header - Estilo Nexus */}
+      {/* Top Header - Estilo Klaws */}
       <header className="flex h-16 items-center justify-between border-b border-slate-200 bg-white px-6">
         <div className="flex items-center gap-3">
           <h1 className="text-xl font-bold text-slate-800 tracking-tight">Conversas</h1>
@@ -168,7 +168,7 @@ export function ChatInterfaceV2() {
         </div>
       </header>
 
-      {/* Sub Header com Abas e Filtros - Estilo Nexus */}
+      {/* Sub Header com Abas e Filtros - Estilo Klaws */}
       <div className="flex flex-col md:flex-row md:items-center justify-between border-b border-slate-200 bg-white px-6 py-1 gap-4">
         {/* Abas */}
         <div className="flex gap-6">
