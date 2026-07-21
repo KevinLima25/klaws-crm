@@ -1,5 +1,6 @@
 import { createClient } from "@/lib/supabase/server"
 import { redirect } from "next/navigation"
+import { TrendingUp } from "lucide-react"
 
 async function signIn(formData: FormData) {
   "use server"
@@ -26,32 +27,37 @@ export default async function LoginPage(props: { searchParams?: Promise<{ error?
   const error = searchParams?.error
 
   return (
-    <div className="flex min-h-screen items-center justify-center p-4">
-      <div className="w-full max-w-md mx-auto rounded-xl border bg-card text-card-foreground shadow-sm">
-        <div className="flex flex-col space-y-1.5 p-6 pb-3">
-          <h3 className="font-semibold text-lg tracking-tight">Login</h3>
-          <p className="text-sm text-muted-foreground">
-            Enter your credentials to access the CRM
-          </p>
+    <div className="flex min-h-screen items-center justify-center bg-[#131520] p-4 font-sans">
+      <div className="w-full max-w-sm">
+        {/* Logo */}
+        <div className="flex flex-col items-center mb-8">
+          <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-gradient-to-tr from-indigo-500 via-purple-500 to-pink-500 text-white shadow-lg shadow-purple-500/20 mb-4">
+            <TrendingUp className="h-7 w-7 stroke-[2.5]" />
+          </div>
+          <h1 className="text-2xl font-bold tracking-wide text-white">Klaws</h1>
+          <p className="text-sm text-slate-400 mt-1">Faça login para continuar</p>
         </div>
-        <form action={signIn}>
-          <div className="p-6 pt-0 space-y-4">
+
+        {/* Card */}
+        <div className="rounded-2xl border border-[#1e2030] bg-[#1f2136] p-8 shadow-xl">
+          <form action={signIn} className="space-y-5">
             <div className="space-y-2">
-              <label htmlFor="email" className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">
+              <label htmlFor="email" className="text-sm font-medium text-slate-300">
                 Email
               </label>
               <input
                 id="email"
                 name="email"
                 type="email"
-                placeholder="you@example.com"
+                placeholder="seu@email.com"
                 required
-                className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+                className="flex h-11 w-full rounded-xl border border-[#2a2d45] bg-[#131520] px-4 py-2 text-sm text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-indigo-500/50 focus:border-indigo-500 transition-all"
               />
             </div>
+
             <div className="space-y-2">
-              <label htmlFor="password" className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">
-                Password
+              <label htmlFor="password" className="text-sm font-medium text-slate-300">
+                Senha
               </label>
               <input
                 id="password"
@@ -59,22 +65,26 @@ export default async function LoginPage(props: { searchParams?: Promise<{ error?
                 type="password"
                 placeholder="••••••••"
                 required
-                className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+                className="flex h-11 w-full rounded-xl border border-[#2a2d45] bg-[#131520] px-4 py-2 text-sm text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-indigo-500/50 focus:border-indigo-500 transition-all"
               />
             </div>
+
             {error && (
-              <p className="text-sm text-destructive">{error}</p>
+              <p className="text-sm text-red-400 bg-red-500/10 rounded-lg px-3 py-2 border border-red-500/20">{error}</p>
             )}
-          </div>
-          <div className="flex flex-col gap-4 p-6 pt-0">
+
             <button
               type="submit"
-              className="inline-flex items-center justify-center whitespace-nowrap rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 bg-primary text-primary-foreground hover:bg-primary/90 h-10 px-4 py-2 w-full"
+              className="inline-flex h-11 w-full items-center justify-center rounded-xl bg-gradient-to-tr from-indigo-500 via-purple-500 to-pink-500 text-sm font-semibold text-white shadow-md shadow-purple-500/20 hover:shadow-lg hover:shadow-purple-500/30 transition-all duration-200 active:scale-[0.98]"
             >
-              Sign In
+              Entrar
             </button>
-          </div>
-        </form>
+          </form>
+        </div>
+
+        <p className="text-center text-xs text-slate-500 mt-6">
+          Klaws CRM &copy; {new Date().getFullYear()}
+        </p>
       </div>
     </div>
   )
