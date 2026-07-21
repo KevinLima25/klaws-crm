@@ -135,6 +135,24 @@ export function CrmSidebar() {
             Configurações
           </div>
         </div>
+
+        {/* Admin */}
+        <div className="space-y-1">
+          <div className="px-3 text-[10px] font-bold uppercase tracking-wider text-slate-500">
+            Administração
+          </div>
+          <Link
+            href="/admin"
+            className={`flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-all duration-200 ${
+              pathname === "/admin"
+                ? "bg-[#1f2136] text-white shadow-sm"
+                : "text-slate-400 hover:text-slate-100 hover:bg-[#171928]"
+            }`}
+          >
+            <Settings className="h-4 w-4" />
+            Usuários
+          </Link>
+        </div>
       </div>
 
       {/* Separador e Rodapé com Perfil */}
