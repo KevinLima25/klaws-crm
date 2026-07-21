@@ -1,0 +1,1 @@
+SELECT json_extract(data, '$.nodes') FROM workflow_entity WHERE id = 'UH5kg99biTCqPZ1F';
