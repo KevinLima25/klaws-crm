@@ -52,3 +52,11 @@ Sprint 1.8 — OCR LOCAL (Tesseract via Microserviço HTTP)
 - [ ] WAHA webhook não existe no n8n
 - [ ] webhookId null (CRM Chat)
 - [ ] Secrets hardcoded no docker-compose.yml (N8N_ENCRYPTION_KEY, WAHA_API_KEY)
+
+### Segurança
+
+- **Secrets removidos do histórico Git**: SUPABASE_SERVICE_ROLE_KEY, N8N_ENCRYPTION_KEY, WAHA_API_KEY, senhas WAHA, JWT de API n8n
+- **Git filter-repo** utilizado para reescrever todo o histórico
+- `.env.example` criado como template seguro (apenas placeholders)
+- `n8n/data/database.sqlite` removido do histórico e gitignorado
+- **Ação necessária**: Revogar SUPABASE_SERVICE_ROLE_KEY comprometida e gerar nova chave no Supabase Dashboard
