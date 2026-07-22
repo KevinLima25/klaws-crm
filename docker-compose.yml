@@ -44,9 +44,11 @@ services:
       # IMPORTANTE: defina uma chave fixa. Se mudar, perde acesso às credenciais salvas.
       - N8N_ENCRYPTION_KEY=N8N_ENCRYPTION_KEY_REMOVED
       - N8N_RUNNERS_ENABLED=true
+      - N8N_CODE_NODE_ENABLED_MODULES=fs,crypto
     volumes:
       # Banco SQLite, credenciais, workflows e configs do n8n
       - ./n8n/data:/home/node/.n8n
+      - ./n8n/n8n-files:/home/node/.n8n-files
       # Pasta para ler/escrever arquivos do host dentro dos workflows
       - ./n8n/files:/files
     networks:
