@@ -4,7 +4,7 @@
 **Versão:** 1.3
 **Sprint Atual:** Sprint 1.8 — OCR LOCAL (Tesseract via microservice HTTP)
 **Release:** v0.1.0-alpha
-**Commit:** *(pendente — chore: prepare repository for v0.1.0-alpha)*
+**Commit:** `2c7fbee` (chore: prepare repository for v0.1.0-alpha)
 **Branch:** `master`
 
 ---
