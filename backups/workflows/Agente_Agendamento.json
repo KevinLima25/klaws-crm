@@ -346,5 +346,6 @@
     "executionOrder": "v1",
     "binaryMode": "separate",
     "availableInMCP": false
-  }
+  },
+  "staticData": null
 }

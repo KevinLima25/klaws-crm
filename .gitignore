@@ -11,12 +11,15 @@ Thumbs.db
 
 # n8n data
 n8n/data/database.sqlite
+n8n/data/database.sqlite-shm
+n8n/data/database.sqlite-wal
 n8n/data/database_backup.sqlite
 n8n/data/database_clean.sqlite
 n8n/data/database_corrupt.sqlite
 n8n/data/storage/
 n8n/data/comprovantes/
 n8n/data/test_samples/
+n8n/n8n-files/
 
 # Backup files
 backup_test_*.json

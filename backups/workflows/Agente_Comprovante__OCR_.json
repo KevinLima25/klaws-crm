@@ -253,5 +253,6 @@
       ]
     }
   },
-  "settings": {}
+  "settings": {},
+  "staticData": null
 }

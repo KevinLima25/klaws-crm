@@ -45,6 +45,7 @@ services:
       - N8N_ENCRYPTION_KEY=N8N_ENCRYPTION_KEY_REMOVED
       - N8N_RUNNERS_ENABLED=true
       - N8N_CODE_NODE_ENABLED_MODULES=fs,crypto
+      - N8N_ENFORCE_SETTINGS_FILE_PERMISSIONS=false
 
       # OCR.space API key (free: https://ocr.space)
       - OCR_SPACE_API_KEY=

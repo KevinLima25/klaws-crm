@@ -22,7 +22,7 @@
     },
     {
       "parameters": {
-        "jsCode": "const supabaseUrl = 'https://wbmljquydsatacqerlzv.supabase.co';\nconst supabaseKey = 'SUPABASE_SERVICE_ROLE_KEY_EXPORTED';\nconst body = $json.body || $json;\nconst user_id = body.user_id;\nconst message = body.message || '';\nlet file_name = body._file_name || body.file_name || null;\nlet file_type = body._file_type || body.file_type || null;\nif (!file_name) {\n  const binKeys = Object.keys($binary || {});\n  if (binKeys.length > 0) {\n    const bin = $binary[binKeys[0]];\n    if (bin && bin.fileName) file_name = bin.fileName;\n    if (bin && bin.mimeType) file_type = bin.mimeType;\n  }\n}\nconst payload = { user_id, message, file_name, file_type, processed: false };\ntry {\n  await this.helpers.httpRequest({\n    method: 'POST',\n    url: supabaseUrl + '/rest/v1/message_buffer',\n    headers: {\n      'Content-Type': 'application/json',\n      'apikey': supabaseKey,\n      'Authorization': 'Bearer ' + supabaseKey\n    },\n    body: payload\n  });\n} catch (e) {\n  console.error('Failed to save to buffer:', e.message);\n}\nreturn $input.all();"
+        "jsCode": "const body = $json.body || $json;\nconst user_id = body.user_id;\nconst message = body.message || '';\nlet file_name = body._file_name || body.file_name || null;\nlet file_type = body._file_type || body.file_type || null;\nif (!file_name) {\n  const binKeys = Object.keys($binary || {});\n  if (binKeys.length > 0) {\n    const bin = $binary[binKeys[0]];\n    if (bin && bin.fileName) file_name = bin.fileName;\n    if (bin && bin.mimeType) file_type = bin.mimeType;\n  }\n}\nreturn $input.all();"
       },
       "id": "salvar_no_buffer_1784660644181",
       "name": "Salvar no Buffer",
@@ -657,5 +657,6 @@
     "executionOrder": "v1",
     "binaryMode": "separate",
     "availableInMCP": false
-  }
+  },
+  "staticData": null
 }
