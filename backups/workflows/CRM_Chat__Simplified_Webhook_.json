@@ -89,7 +89,8 @@
       "position": [
         672,
         304
-      ]
+      ],
+      "continueOnFail": true
     },
     {
       "parameters": {
@@ -108,7 +109,10 @@
           "id": "SHCrSearl3r2JwZp",
           "name": "Google Gemini(PaLM) Api account"
         }
-      }
+      },
+      "retryOnFail": true,
+      "maxTries": 3,
+      "continueOnFail": true
     },
     {
       "parameters": {
@@ -216,7 +220,7 @@
             {
               "id": "40e47bd6-8ec5-473e-b985-6d01f0ec2ce8",
               "name": "text",
-              "value": "={{ $json.output }}",
+              "value": "={{ $json.output || $json.text || \"No momento o assistente esta temporariamente indisponivel devido ao limite de requisicoes da IA. Sua mensagem foi recebida. Tente novamente em alguns instantes.\" }}",
               "type": "string"
             }
           ]
@@ -656,7 +660,8 @@
   "settings": {
     "executionOrder": "v1",
     "binaryMode": "separate",
-    "availableInMCP": false
+    "availableInMCP": false,
+    "errorWorkflow": "1UFL8ig0sh19sJBF"
   },
   "staticData": null
 }

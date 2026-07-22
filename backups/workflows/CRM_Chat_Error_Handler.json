@@ -1,0 +1,98 @@
+{
+  "id": "sSXlCc97ClTzMCrv",
+  "name": "CRM Chat Error Handler",
+  "active": true,
+  "nodes": [
+    {
+      "id": "fca12aeb2a3c4024b8c700ed1f851b1e",
+      "name": "Error Trigger",
+      "typeVersion": 1,
+      "type": "n8n-nodes-base.errorTrigger",
+      "position": [
+        250,
+        300
+      ],
+      "parameters": {}
+    },
+    {
+      "id": "971ba3e74daf4cb79daa34c9d79fa14c",
+      "name": "Set Fallback",
+      "typeVersion": 3.4,
+      "type": "n8n-nodes-base.set",
+      "position": [
+        450,
+        300
+      ],
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "1",
+              "name": "text",
+              "value": "No momento o assistente esta temporariamente indisponivel devido ao limite de requisicoes da IA. Sua mensagem foi recebida. Tente novamente em alguns instantes.",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {},
+        "includeOtherFields": true
+      }
+    },
+    {
+      "id": "099fa48081414ca0b5f00006ae9fa580",
+      "name": "Respond",
+      "typeVersion": 1,
+      "type": "n8n-nodes-base.respondToWebhook",
+      "position": [
+        650,
+        300
+      ],
+      "parameters": {
+        "respondWith": "json",
+        "options": {},
+        "responseBodyType": "firstItemJson",
+        "responseData_simple": [
+          {
+            "id": "1",
+            "name": "text",
+            "value": "={{ \\.text }}",
+            "type": "string"
+          }
+        ]
+      }
+    }
+  ],
+  "connections": {
+    "Error Trigger": {
+      "main": [
+        [
+          {
+            "node": "Set Fallback",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Set Fallback": {
+      "main": [
+        [
+          {
+            "node": "Respond",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Respond": {
+      "main": [
+        []
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "staticData": null
+}
