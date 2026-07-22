@@ -6,17 +6,21 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { ScrollArea } from "@/components/ui/scroll-area"
 import { Avatar, AvatarFallback } from "@/components/ui/avatar"
-import { 
-  Send, 
-  Bot, 
-  User, 
-  Search, 
-  SlidersHorizontal, 
-  ArrowUpDown, 
-  Plus, 
+import {
+  Send,
+  Bot,
+  User,
+  Search,
+  SlidersHorizontal,
+  ArrowUpDown,
+  Plus,
   MoreHorizontal,
   Bell,
-  HelpCircle
+  HelpCircle,
+  Paperclip,
+  X,
+  FileText,
+  Image
 } from "lucide-react"
 
 type Message = {
@@ -26,14 +30,31 @@ type Message = {
   created_at: string
 }
 
+const ACCEPTED_TYPES = ".pdf,.jpg,.jpeg,.png,.xls,.xlsx,.csv"
+
+function getFileIcon(name: string) {
+  const ext = name.split(".").pop()?.toLowerCase()
+  if (["jpg", "jpeg", "png"].includes(ext || "")) return <Image className="h-4 w-4" />
+  return <FileText className="h-4 w-4" />
+}
+
+function formatFileSize(bytes: number) {
+  if (bytes < 1024) return bytes + " B"
+  if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(1) + " KB"
+  return (bytes / (1024 * 1024)).toFixed(1) + " MB"
+}
+
 export function ChatInterfaceV2() {
   const [messages, setMessages] = useState<Message[]>([])
   const [input, setInput] = useState("")
   const [loading, setLoading] = useState(false)
   const [userId, setUserId] = useState<string | null>(null)
   const [userName, setUserName] = useState<string>("")
+  const [userCargo, setUserCargo] = useState("")
   const [activeTab, setActiveTab] = useState<"all" | "unread" | "scheduled">("all")
+  const [selectedFiles, setSelectedFiles] = useState<File[]>([])
   const scrollRef = useRef<HTMLDivElement>(null)
+  const fileInputRef = useRef<HTMLInputElement>(null)
 
   useEffect(() => {
     const supabase = createClient()
@@ -41,6 +62,7 @@ export function ChatInterfaceV2() {
       if (data.user) {
         setUserId(data.user.id)
         setUserName(data.user.user_metadata?.name || data.user.email?.split('@')[0] || "")
+        setUserCargo(data.user.user_metadata?.cargo || "")
         loadMessages(data.user.id)
       }
     })
@@ -63,23 +85,34 @@ export function ChatInterfaceV2() {
     if (data) setMessages(data)
   }
 
+  function handleFileSelect(e: React.ChangeEvent<HTMLInputElement>) {
+    const files = Array.from(e.target.files || [])
+    setSelectedFiles((prev) => [...prev, ...files].slice(0, 5))
+    if (e.target) e.target.value = ""
+  }
+
+  function removeFile(index: number) {
+    setSelectedFiles((prev) => prev.filter((_, i) => i !== index))
+  }
+
   async function handleSend(e: React.FormEvent) {
     e.preventDefault()
-    if (!input.trim() || !userId) return
+    if ((!input.trim() && selectedFiles.length === 0) || !userId) return
 
     const text = input.trim()
     setInput("")
+    const filesToSend = [...selectedFiles]
+    setSelectedFiles([])
     setLoading(true)
 
     const supabase = createClient()
 
-    // Salva mensagem do usuário no Supabase
     const { data: userMsg } = await supabase
       .from("chat_messages")
       .insert({
         user_id: userId,
         sender: "user",
-        message: text,
+        message: text || (filesToSend.length > 0 ? `[${filesToSend.map(f => f.name).join(", ")}]` : ""),
         source: "web_crm",
       })
       .select()
@@ -90,16 +123,19 @@ export function ChatInterfaceV2() {
     }
 
     try {
-      // Envia para o webhook do n8n
+      const formData = new FormData()
+      formData.append("user_id", userId)
+      formData.append("name", userName)
+      formData.append("cargo", userCargo)
+      formData.append("message", text)
+      formData.append("source", "web_crm")
+      for (const file of filesToSend) {
+        formData.append("files", file)
+      }
+
       const response = await fetch(process.env.NEXT_PUBLIC_N8N_WEBHOOK_URL!, {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          user_id: userId,
-          name: userName,
-          message: text,
-          source: "web_crm",
-        }),
+        body: formData,
       })
 
       let botReply = ""
@@ -110,23 +146,23 @@ export function ChatInterfaceV2() {
         botReply = await response.text()
       }
 
-      // Salva resposta do bot no Supabase
-      const { data: botMsg } = await supabase
-        .from("chat_messages")
-        .insert({
-          user_id: userId,
-          sender: "bot",
-          message: botReply,
-          source: "web_crm",
-        })
-        .select()
-        .single()
+      if (botReply) {
+        const { data: botMsg } = await supabase
+          .from("chat_messages")
+          .insert({
+            user_id: userId,
+            sender: "bot",
+            message: botReply,
+            source: "web_crm",
+          })
+          .select()
+          .single()
 
-      if (botMsg) {
-        setMessages((prev) => [...prev, botMsg])
+        if (botMsg) {
+          setMessages((prev) => [...prev, botMsg])
+        }
       }
     } catch {
-      // Se der erro ao alcançar o n8n
       const { data: errMsg } = await supabase
         .from("chat_messages")
         .insert({
@@ -148,7 +184,6 @@ export function ChatInterfaceV2() {
 
   return (
     <div className="flex h-full flex-col bg-[#f8f9fc] font-sans">
-      {/* Top Header - Estilo Klaws */}
       <header className="flex h-16 items-center justify-between border-b border-slate-200 bg-white px-6">
         <div className="flex items-center gap-3">
           <h1 className="text-xl font-bold text-slate-800 tracking-tight">Conversas</h1>
@@ -168,9 +203,7 @@ export function ChatInterfaceV2() {
         </div>
       </header>
 
-      {/* Sub Header com Abas e Filtros - Estilo Klaws */}
       <div className="flex flex-col md:flex-row md:items-center justify-between border-b border-slate-200 bg-white px-6 py-1 gap-4">
-        {/* Abas */}
         <div className="flex gap-6">
           <button
             onClick={() => setActiveTab("all")}
@@ -204,7 +237,6 @@ export function ChatInterfaceV2() {
           </button>
         </div>
 
-        {/* Filtros e Busca */}
         <div className="flex items-center gap-2 pb-2 md:pb-0">
           <div className="relative w-60">
             <Search className="absolute left-3 top-2.5 h-4 w-4 text-slate-400" />
@@ -224,7 +256,6 @@ export function ChatInterfaceV2() {
         </div>
       </div>
 
-      {/* Janela de Mensagens */}
       <ScrollArea className="flex-1 px-8 py-6">
         <div className="space-y-6 max-w-4xl mx-auto">
           {messages.length === 0 && (
@@ -234,7 +265,7 @@ export function ChatInterfaceV2() {
               </div>
               <div>
                 <p className="text-sm font-bold text-slate-700">Nenhuma mensagem ainda</p>
-                <p className="text-xs text-slate-400">Envie uma mensagem abaixo para iniciar a conversa.</p>
+                <p className="text-xs text-slate-400">Envie arquivos ou texto abaixo para iniciar.</p>
               </div>
             </div>
           )}
@@ -280,26 +311,62 @@ export function ChatInterfaceV2() {
         </div>
       </ScrollArea>
 
-      {/* Input de Mensagem */}
-      <footer className="border-t border-slate-200 bg-white p-4.5">
-        <div className="max-w-4xl mx-auto">
-          <form onSubmit={handleSend} className="flex gap-3">
-            <Input
-              placeholder="Digite sua mensagem para o agente de agendamento..."
-              value={input}
-              onChange={(e) => setInput(e.target.value)}
-              disabled={loading}
-              className="flex-1 h-12 px-5 rounded-xl border-slate-200 bg-slate-50/50 text-sm focus-visible:ring-2 focus-visible:ring-[#10b981]/30 focus-visible:border-[#10b981] placeholder-slate-400"
-            />
-            <Button 
-              type="submit" 
-              size="icon" 
-              disabled={loading || !input.trim()}
-              className="h-12 w-12 rounded-xl bg-[#10b981] hover:bg-[#0e9f6e] text-white shadow-md shadow-emerald-500/10 active:scale-95 transition-all duration-150"
-            >
-              <Send className="h-4.5 w-4.5" />
-            </Button>
-          </form>
+      <footer className="border-t border-slate-200 bg-white">
+        {selectedFiles.length > 0 && (
+          <div className="px-6 pt-3 pb-1 flex flex-wrap gap-2">
+            {selectedFiles.map((file, i) => (
+              <div
+                key={i}
+                className="flex items-center gap-2 bg-slate-100 rounded-lg px-3 py-1.5 text-xs text-slate-700 border border-slate-200"
+              >
+                {getFileIcon(file.name)}
+                <span className="max-w-[140px] truncate">{file.name}</span>
+                <span className="text-slate-400">({formatFileSize(file.size)})</span>
+                <button onClick={() => removeFile(i)} className="text-slate-400 hover:text-rose-500 ml-1">
+                  <X className="h-3.5 w-3.5" />
+                </button>
+              </div>
+            ))}
+          </div>
+        )}
+
+        <div className="p-4.5">
+          <div className="max-w-4xl mx-auto">
+            <form onSubmit={handleSend} className="flex gap-3 items-end">
+              <input
+                ref={fileInputRef}
+                type="file"
+                multiple
+                accept={ACCEPTED_TYPES}
+                onChange={handleFileSelect}
+                className="hidden"
+              />
+              <Button
+                type="button"
+                size="icon"
+                onClick={() => fileInputRef.current?.click()}
+                disabled={loading}
+                className="h-12 w-12 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-500 border border-slate-200 active:scale-95 transition-all duration-150"
+              >
+                <Paperclip className="h-4.5 w-4.5" />
+              </Button>
+              <Input
+                placeholder="Digite sua mensagem..."
+                value={input}
+                onChange={(e) => setInput(e.target.value)}
+                disabled={loading}
+                className="flex-1 h-12 px-5 rounded-xl border-slate-200 bg-slate-50/50 text-sm focus-visible:ring-2 focus-visible:ring-[#10b981]/30 focus-visible:border-[#10b981] placeholder-slate-400"
+              />
+              <Button
+                type="submit"
+                size="icon"
+                disabled={loading || (!input.trim() && selectedFiles.length === 0)}
+                className="h-12 w-12 rounded-xl bg-[#10b981] hover:bg-[#0e9f6e] text-white shadow-md shadow-emerald-500/10 active:scale-95 transition-all duration-150"
+              >
+                <Send className="h-4.5 w-4.5" />
+              </Button>
+            </form>
+          </div>
         </div>
       </footer>
     </div>

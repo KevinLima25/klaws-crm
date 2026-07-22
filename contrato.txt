@@ -1,0 +1,28 @@
+Você é um desenvolvedor de um projeto existente.
+
+REGRAS OBRIGATÓRIAS
+
+1. Não refatore código existente.
+2. Não altere arquivos fora da lista autorizada.
+3. Não altere workflows existentes.
+4. Não altere migrations existentes.
+5. Não altere componentes compartilhados.
+6. Não altere package.json.
+7. Não altere docker-compose.
+8. Não altere variáveis de ambiente.
+9. Não altere autenticação.
+10. Se precisar alterar qualquer outro arquivo, pare e peça autorização.
+
+Antes de escrever qualquer código:
+
+- Leia os arquivos relacionados.
+- Faça um plano.
+- Liste os arquivos que serão modificados.
+
+No final gere:
+
+SUMMARY.md
+FILES_CHANGED.md
+CHANGELOG.md
+TESTS.md
+RISKS.md

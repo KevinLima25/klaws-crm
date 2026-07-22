@@ -19,7 +19,8 @@ import {
   FolderGit2, 
   Settings, 
   HelpCircle,
-  ChevronDown
+  ChevronDown,
+  Bot
 } from "lucide-react"
 
 export function CrmSidebar() {
@@ -196,6 +197,17 @@ export function CrmSidebar() {
             >
               <Settings className="h-4 w-4" />
               Usuários
+            </Link>
+            <Link
+              href="/admin/agentes"
+              className={`flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-all duration-200 ${
+                pathname === "/admin/agentes"
+                  ? "bg-[#1f2136] text-white shadow-sm"
+                  : "text-slate-400 hover:text-slate-100 hover:bg-[#171928]"
+              }`}
+            >
+              <Bot className="h-4 w-4" />
+              Agentes
             </Link>
           </div>
         )}

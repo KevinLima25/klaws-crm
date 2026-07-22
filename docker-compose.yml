@@ -35,12 +35,12 @@ services:
       - N8N_HOST=localhost
       - N8N_PORT=5678
       - N8N_PROTOCOL=http
-      # URL usada pelos webhooks. Em produção, troque por https://seu-dominio
-      - WEBHOOK_URL=https://thread-urologist-catching.ngrok-free.dev/
+      # URL usada pelos webhooks
+      - N8N_WEBHOOK_URL=https://thread-urologist-catching.ngrok-free.dev/
       - GENERIC_TIMEZONE=America/Sao_Paulo
       - TZ=America/Sao_Paulo
       - N8N_PROXY_HOPS=1
-      
+
       # IMPORTANTE: defina uma chave fixa. Se mudar, perde acesso às credenciais salvas.
       - N8N_ENCRYPTION_KEY=N8N_ENCRYPTION_KEY_REMOVED
       - N8N_RUNNERS_ENABLED=true
@@ -72,4 +72,3 @@ services:
 networks:
   automation:
     driver: bridge
-
