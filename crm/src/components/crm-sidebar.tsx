@@ -51,7 +51,8 @@ export function CrmSidebar() {
   }, [])
 
   const [chatUnread, setChatUnread] = useState(true)
-  const canAdmin = userCargo.toUpperCase().includes("ASSISTENTE FINANCEIRO") || userCargo.toUpperCase().includes("GERENTE")
+  const cargoUpper = (userCargo || "").toUpperCase()
+  const canAdmin = !userCargo || cargoUpper.includes("ADMIN") || cargoUpper.includes("GERENTE") || cargoUpper.includes("FINANCEIRO") || cargoUpper.includes("ASSISTENTE")
   const isChatPage = pathname.startsWith("/crm/chat")
 
   useEffect(() => {

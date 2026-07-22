@@ -1,0 +1,530 @@
+{
+  "nodes": [
+    {
+      "id": "532b9474f98044e6942db0c62b27839c",
+      "name": "Webhook Comprovante",
+      "typeVersion": 2,
+      "type": "n8n-nodes-base.webhook",
+      "position": [
+        0,
+        300
+      ],
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "comprovante",
+        "responseMode": "lastNode",
+        "options": {}
+      },
+      "webhookId": "wh_comp_1784724194759"
+    },
+    {
+      "id": "cf3c59febf9144c195b31e52df0cf325",
+      "name": "VALIDAR ARQUIVO",
+      "typeVersion": 1,
+      "type": "n8n-nodes-base.code",
+      "position": [
+        220,
+        300
+      ],
+      "parameters": {
+        "jsCode": "const TAMANHO_MAXIMO = 20 * 1024 * 1024;\nconst items = $input.all();\nif (!items || !items.length) return [{ json: { valido: false, erros: [\"sem itens\"] } }];\nconst item = items[0];\nlet buf = null;\nlet fileName = \"\";\nlet mimeType = \"\";\nlet binaryKey = \"\";\nlet createdFromBase64 = false;\n// 1. Check $binary first\nconst binKeys = Object.keys($binary || {});\nif (binKeys.length > 0) {\n  binaryKey = binKeys[0];\n  const bin = $binary[binaryKey];\n  if (bin) {\n    // Method signature: getBinaryDataBuffer(itemIndex, propertyName|binaryData)\n    try { buf = await this.helpers.getBinaryDataBuffer(0, bin); } catch(e) {}\n    if (!buf) { try { buf = await this.helpers.getBinaryDataBuffer(0, binaryKey); } catch(e) {} }\n    if (!buf && bin.data) {\n      if (Buffer.isBuffer(bin.data)) buf = bin.data;\n      else if (typeof bin.data === \"string\") buf = Buffer.from(bin.data, \"base64\");\n    }\n    fileName = bin.fileName || \"\";\n    mimeType = bin.mimeType || \"\";\n  }\n}\n// 2. Check item.binary fallback\nif (!buf && item && item.binary) {\n  const ibk = Object.keys(item.binary);\n  if (ibk.length > 0) {\n    if (!binaryKey) binaryKey = ibk[0];\n    const ibKey = ibk[0];\n    const ib = item.binary[ibKey];\n    if (ib) {\n      try { buf = await this.helpers.getBinaryDataBuffer(0, ib); } catch(e) {}\n      if (!buf) { try { buf = await this.helpers.getBinaryDataBuffer(0, ibKey); } catch(e) {} }\n      if (!buf && ib.data) {\n        buf = Buffer.isBuffer(ib.data) ? ib.data : Buffer.from(ib.data, \"base64\");\n      }\n      fileName = fileName || ib.fileName || \"\";\n      mimeType = mimeType || ib.mimeType || \"\";\n    }\n  }\n}\n// 3. Check JSON body for base64-encoded file (from Enviar para Agente Comprovante Code node)\nconst body = item.json.body || item.json || {};\nif (!buf && body.file_base64) {\n  try {\n    buf = Buffer.from(body.file_base64, \"base64\");\n    fileName = fileName || body.file_name || body.fileName || \"\";\n    mimeType = mimeType || body.file_type || body.fileType || \"application/octet-stream\";\n    binaryKey = binaryKey || \"data\";\n    createdFromBase64 = true;\n  } catch(e) {}\n}\n// Fallback name from JSON\nfileName = fileName || body.fileName || body.file_name || body._file_name || \"\";\nmimeType = mimeType || body.fileType || body.file_type || body._file_type || \"\";\n// Validation\nconst ext = fileName ? fileName.toLowerCase().split(\".\").pop() : \"\";\nconst validExts = [\"pdf\", \"jpg\", \"jpeg\", \"png\"];\nconst erros = [];\nif (!buf) erros.push(\"arquivo_binario_ausente\");\nif (buf && buf.length > TAMANHO_MAXIMO) erros.push(\"arquivo_excede_tamanho_maximo_20MB\");\nif (fileName && !validExts.includes(ext)) erros.push(\"Extensao_invalida: \" + ext);\nlet hash = \"\";\nlet fileSize = 0;\nif (buf) {\n  fileSize = buf.length;\n  var s = 0;\n  var arr = new Uint8Array(buf.buffer || buf);\n  for (var i = 0; i < arr.length; i++) { s = (s * 31 + arr[i]) >>> 0; }\n  hash = s.toString(16).padStart(8, \"0\");\n}\nconst caminho_completo = buf ? \"/home/node/.n8n-files/comprovantes/entrada/\" + Date.now() + \"_\" + (fileName || \"arquivo\") : \"\";\nconst temBinario = binKeys.length > 0 || (item && item.binary && Object.keys(item.binary).length > 0) || createdFromBase64;\nconst outputBinary = createdFromBase64 ? { data: { data: buf.toString(\"base64\"), mimeType: mimeType, fileName: fileName } } : (item.binary || undefined);\nif (!binaryKey && temBinario) binaryKey = \"data\";\nreturn [{ json: { valido: erros.length === 0, erros: erros, arquivo_nome: fileName, arquivo_tipo: mimeType, fileSize: fileSize, hash_sha256: hash, tem_binario: temBinario, binario_key: binaryKey, caminho_completo: caminho_completo }, binary: outputBinary }];"
+      }
+    },
+    {
+      "id": "d7225a6d244e421593b39d0ca4562d1b",
+      "name": "Valido?",
+      "typeVersion": 1,
+      "type": "n8n-nodes-base.if",
+      "position": [
+        440,
+        300
+      ],
+      "parameters": {
+        "conditions": {
+          "string": [
+            {
+              "value1": "={{ $json.valido }}",
+              "operation": "equal",
+              "value2": "={{ true }}"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "cce17cedaa2b493ea138850c153a54e2",
+      "name": "RESPOSTA ERRO",
+      "typeVersion": 3.4,
+      "type": "n8n-nodes-base.set",
+      "position": [
+        660,
+        500
+      ],
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "e152ca674d614d578e3b6d1fbadb33b0",
+              "name": "status",
+              "value": "erro",
+              "type": "string"
+            },
+            {
+              "id": "f1a3cc1b6d564ab4a5a39cf7b317ce3d",
+              "name": "erro",
+              "value": "={{ $json.erros[0] || \"Erro desconhecido\" }}",
+              "type": "string"
+            },
+            {
+              "id": "26a1b0b2128b4a309eeab554cc3b80fa",
+              "name": "arquivo",
+              "value": "={{ $json.arquivo_nome }}",
+              "type": "string"
+            },
+            {
+              "id": "b646b7ab9f28478ca9270076ab278af6",
+              "name": "data",
+              "value": "={{ new Date().toISOString() }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      }
+    },
+    {
+      "id": "4d1d92b3c74d4c23823aaaa09b692579",
+      "name": "TEM BINARIO?",
+      "typeVersion": 1,
+      "type": "n8n-nodes-base.if",
+      "position": [
+        660,
+        300
+      ],
+      "parameters": {
+        "conditions": {
+          "boolean": [
+            {
+              "value1": "={{ $json.tem_binario }}",
+              "operation": "equal",
+              "value2": true
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "40262ae6a5d7404b8fbb38527167e74a",
+      "name": "Write Binary File",
+      "typeVersion": 1,
+      "type": "n8n-nodes-base.writeBinaryFile",
+      "position": [
+        860,
+        200
+      ],
+      "parameters": {
+        "dataPropertyName": "={{ $json.binario_key || \"file\" }}",
+        "fileName": "={{ $json.caminho_completo }}",
+        "options": {}
+      }
+    },
+    {
+      "id": "98a927738ef448088fa67b094509885c",
+      "name": "PREPARAR OCR",
+      "typeVersion": 1,
+      "type": "n8n-nodes-base.code",
+      "parameters": {
+        "jsCode": "const item = $input.first();\nif (!item) return [{ json: { ocr_status: \"erro\", ocr_erro: \"sem_item\" } }];\nconst binKey = item.json.binario_key || \"data\";\nconst bin = $binary && $binary[binKey];\nlet buf = null;\nif (bin) { try { buf = await this.helpers.getBinaryDataBuffer(0, bin); } catch(e) {} }\nif (!buf && item.binary) {\n  const ibk = Object.keys(item.binary);\n  if (ibk.length > 0) {\n    const ib = item.binary[ibk[0]];\n    try { buf = await this.helpers.getBinaryDataBuffer(0, ib); } catch(e) {}\n  }\n}\nif (!buf) return [{ json: { ...item.json, ocr_status: \"erro\", ocr_erro: \"sem_dados_binario\" } }];\nconst mime = item.json.arquivo_tipo || \"application/octet-stream\";\nreturn [{ json: { ...item.json, ocr_base64: \"data:\" + mime + \";base64,\" + buf.toString(\"base64\") } }];"
+      },
+      "position": [
+        1060,
+        200
+      ]
+    },
+    {
+      "id": "ce32c148cfd5480b898b89d1f7d12859",
+      "name": "OCR.space",
+      "typeVersion": 4.1,
+      "type": "n8n-nodes-base.httpRequest",
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.ocr.space/v2/parse/image",
+        "authentication": "none",
+        "sendBody": true,
+        "bodyContentType": "json",
+        "jsonBody": "{\"apikey\":\"={{ $env.OCR_SPACE_API_KEY }}\",\"base64Image\":\"={{ $json.ocr_base64 }}\",\"language\":\"por\",\"isOverlayRequired\":false,\"OCREngine\":2}",
+        "options": {
+          "timeout": 30000,
+          "continueOnFail": true
+        },
+        "response": {
+          "response": {
+            "output": "field",
+            "fieldName": "ocr_resposta"
+          }
+        }
+      },
+      "position": [
+        1260,
+        200
+      ]
+    },
+    {
+      "id": "03032e583466487e8b3664dccd297bd4",
+      "name": "OCR Sucesso?",
+      "typeVersion": 1,
+      "type": "n8n-nodes-base.if",
+      "parameters": {
+        "conditions": {
+          "string": [
+            {
+              "value1": "={{ $json.ocr_resposta.OCRExitCode }}",
+              "operation": "equal",
+              "value2": "={{ 1 }}"
+            }
+          ]
+        }
+      },
+      "position": [
+        1460,
+        200
+      ]
+    },
+    {
+      "id": "8108fa5960a243329ff221dc750fd766",
+      "name": "Tesseract OCR",
+      "typeVersion": 4.1,
+      "type": "n8n-nodes-base.httpRequest",
+      "parameters": {
+        "method": "POST",
+        "url": "http://ocr-service:3002/ocr",
+        "authentication": "none",
+        "sendBody": true,
+        "bodyContentType": "json",
+        "jsonBody": "{\"base64Image\":\"={{ $json.ocr_base64 }}\"}",
+        "options": {
+          "timeout": 30000,
+          "continueOnFail": true
+        },
+        "response": {
+          "response": {
+            "output": "field",
+            "fieldName": "ocr_resposta"
+          }
+        }
+      },
+      "position": [
+        1660,
+        300
+      ]
+    },
+    {
+      "id": "b909f507a57e4eeaaf7eba0ec18cc681",
+      "name": "PROCESSAR RESULTADO",
+      "typeVersion": 1,
+      "type": "n8n-nodes-base.code",
+      "parameters": {
+        "jsCode": "const item = $input.first();\nif (!item) return [{ json: { ocr_status: \"erro\", ocr_erro: \"sem_item\" } }];\nconst resp = item.json.ocr_resposta || {};\nlet ocrTexto = \"\";\nlet ocrEngine = \"nenhum\";\nlet ocrStatus = \"erro\";\nlet ocrErro = \"\";\n// Determine engine from response format\nif (resp.ParsedResults) {\n  ocrEngine = \"ocr.space\";\n  if (resp.OCRExitCode === 1 && resp.ParsedResults.length > 0) {\n    var text = (resp.ParsedResults[0].ParsedText || \"\").trim();\n    if (text) { ocrTexto = text; ocrStatus = \"ok\"; }\n    else { ocrErro = resp.ParsedResults[0].ErrorMessage || \"sem_texto\"; }\n  } else {\n    ocrErro = \"OCR.space_exit_code_\" + (resp.OCRExitCode || \"?\");\n  }\n} else if (resp.engine === \"tesseract\" || resp.text !== undefined) {\n  ocrEngine = \"tesseract\";\n  if (resp.text) { ocrTexto = resp.text; ocrStatus = \"ok\"; }\n  else { ocrErro = resp.error || \"Tesseract_sem_resposta\"; }\n} else if (resp.error) {\n  ocrErro = resp.error;\n} else {\n  ocrErro = \"formato_resposta_desconhecido\";\n}\nconst arquivoNome = item.json.arquivo_nome || \"arquivo\";\nconst txtFileName = arquivoNome.replace(/\\.[^.]+$/, \"\") + \".txt\";\nconst txtContent = \"=== OCR RESULT ===\\nEngine: \" + ocrEngine + \"\\nStatus: \" + ocrStatus + \"\\nTimestamp: \" + new Date().toISOString() + \"\\n\\n\" + ocrTexto;\nconst txtB64 = Buffer.from(txtContent, \"utf-8\").toString(\"base64\");\nconst ocrPathTxt = \"/home/node/.n8n-files/comprovantes/processados/\" + txtFileName;\nreturn [{\n  json: {\n    arquivo_original: item.json.arquivo_nome || \"\",\n    arquivo_nome: item.json.arquivo_nome || \"\",\n    arquivo_tipo: item.json.arquivo_tipo || \"\",\n    caminho_completo: item.json.caminho_completo || \"\",\n    fileName: item.json.fileName || \"\",\n    binario_key: item.json.binario_key || \"\",\n    fileSize: item.json.fileSize || 0,\n    hash_sha256: item.json.hash_sha256 || \"\",\n    ocr_status: ocrStatus,\n    ocr_texto: ocrTexto,\n    ocr_engine: ocrEngine,\n    ocr_erro: ocrErro,\n    ocr_timestamp: new Date().toISOString(),\n    ocr_path_txt: ocrPathTxt,\n    ocr_txt_nome: txtFileName\n  },\n  binary: {\n    \"ocr_resultado\": { data: txtB64, mimeType: \"text/plain\", fileName: txtFileName }\n  }\n}];"
+      },
+      "position": [
+        1860,
+        200
+      ]
+    },
+    {
+      "id": "d470ea37213947c98bf3059f9dfa7d67",
+      "name": "SALVAR OCR .TXT",
+      "typeVersion": 1,
+      "type": "n8n-nodes-base.writeBinaryFile",
+      "parameters": {
+        "dataPropertyName": "ocr_resultado",
+        "fileName": "={{ $json.ocr_path_txt }}",
+        "options": {}
+      },
+      "position": [
+        2060,
+        200
+      ]
+    },
+    {
+      "id": "3506016cee5645e0a46f2c6be0d746fb",
+      "name": "Set Metadados",
+      "typeVersion": 3.4,
+      "type": "n8n-nodes-base.set",
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "1",
+              "name": "arquivo_original",
+              "value": "={{ $json.arquivo_original || \"\" }}",
+              "type": "string"
+            },
+            {
+              "id": "2",
+              "name": "arquivo_salvo",
+              "value": "={{ $json.fileName || $json.caminho_completo || \"\" }}",
+              "type": "string"
+            },
+            {
+              "id": "3",
+              "name": "timestamp",
+              "value": "={{ $now.toISOString() }}",
+              "type": "string"
+            },
+            {
+              "id": "4",
+              "name": "ocr_status",
+              "value": "={{ $json.ocr_status || \"pendente\" }}",
+              "type": "string"
+            },
+            {
+              "id": "5",
+              "name": "ocr_engine",
+              "value": "={{ $json.ocr_engine || \"\" }}",
+              "type": "string"
+            },
+            {
+              "id": "6",
+              "name": "ocr_texto",
+              "value": "={{ $json.ocr_texto || \"\" }}",
+              "type": "string"
+            },
+            {
+              "id": "7",
+              "name": "ocr_timestamp",
+              "value": "={{ $json.ocr_timestamp || \"\" }}",
+              "type": "string"
+            },
+            {
+              "id": "8",
+              "name": "ocr_path_txt",
+              "value": "={{ $json.ocr_path_txt || \"\" }}",
+              "type": "string"
+            },
+            {
+              "id": "9",
+              "name": "ocr_erro",
+              "value": "={{ $json.ocr_erro || \"\" }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {},
+        "includeOtherFields": true
+      },
+      "position": [
+        2260,
+        200
+      ]
+    },
+    {
+      "id": "2318a2ca8c5c458ca881bd0df9d4093b",
+      "name": "RESPOSTA SUCESSO",
+      "typeVersion": 3.4,
+      "type": "n8n-nodes-base.set",
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "1",
+              "name": "status",
+              "value": "success",
+              "type": "string"
+            },
+            {
+              "id": "2",
+              "name": "arquivo_original",
+              "value": "={{ $json.arquivo_original || \"\" }}",
+              "type": "string"
+            },
+            {
+              "id": "3",
+              "name": "arquivo_salvo",
+              "value": "={{ $json.ocr_path_txt || $json.caminho_completo || \"\" }}",
+              "type": "string"
+            },
+            {
+              "id": "4",
+              "name": "timestamp",
+              "value": "={{ Date.now() }}",
+              "type": "number"
+            }
+          ],
+          "options": {
+            "includeOtherFields": true
+          }
+        }
+      },
+      "position": [
+        2460,
+        200
+      ]
+    }
+  ],
+  "connections": {
+    "Webhook Comprovante": {
+      "main": [
+        [
+          {
+            "node": "VALIDAR ARQUIVO",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "VALIDAR ARQUIVO": {
+      "main": [
+        [
+          {
+            "node": "Valido?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Valido?": {
+      "main": [
+        [
+          {
+            "node": "TEM BINARIO?",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "RESPOSTA ERRO",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "TEM BINARIO?": {
+      "main": [
+        [
+          {
+            "node": "Write Binary File",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Set Metadados",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Write Binary File": {
+      "main": [
+        [
+          {
+            "node": "PREPARAR OCR",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "PREPARAR OCR": {
+      "main": [
+        [
+          {
+            "node": "OCR.space",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "OCR.space": {
+      "main": [
+        [
+          {
+            "node": "OCR Sucesso?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "OCR Sucesso?": {
+      "main": [
+        [
+          {
+            "node": "PROCESSAR RESULTADO",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Tesseract OCR",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Tesseract OCR": {
+      "main": [
+        [
+          {
+            "node": "PROCESSAR RESULTADO",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "PROCESSAR RESULTADO": {
+      "main": [
+        [
+          {
+            "node": "SALVAR OCR .TXT",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "SALVAR OCR .TXT": {
+      "main": [
+        [
+          {
+            "node": "Set Metadados",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Set Metadados": {
+      "main": [
+        [
+          {
+            "node": "RESPOSTA SUCESSO",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "RESPOSTA SUCESSO": {
+      "main": [
+        []
+      ]
+    },
+    "RESPOSTA ERRO": {
+      "main": [
+        []
+      ]
+    }
+  }
+}

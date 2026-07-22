@@ -27,7 +27,7 @@ export async function POST() {
 
   const results: { nome: string; email: string; status: string }[] = []
 
-  for (const f of funcionarios) {
+  for (const f of funcionarios as Record<string, any>[]) {
     const email = (f[emailCol] || "").toString().trim().toLowerCase()
     if (!email) continue
 

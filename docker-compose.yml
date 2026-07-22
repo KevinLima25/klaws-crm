@@ -45,12 +45,26 @@ services:
       - N8N_ENCRYPTION_KEY=N8N_ENCRYPTION_KEY_REMOVED
       - N8N_RUNNERS_ENABLED=true
       - N8N_CODE_NODE_ENABLED_MODULES=fs,crypto
+
+      # OCR.space API key (free: https://ocr.space)
+      - OCR_SPACE_API_KEY=
     volumes:
       # Banco SQLite, credenciais, workflows e configs do n8n
       - ./n8n/data:/home/node/.n8n
       - ./n8n/n8n-files:/home/node/.n8n-files
       # Pasta para ler/escrever arquivos do host dentro dos workflows
       - ./n8n/files:/files
+    networks:
+      - automation
+
+  ocr-service:
+    build:
+      context: ./ocr-service
+      dockerfile: Dockerfile
+    container_name: ocr-service
+    restart: unless-stopped
+    ports:
+      - "3002:3002"
     networks:
       - automation
 

@@ -2,7 +2,7 @@
 
 import { useEffect, useState, useRef } from "react"
 import { createClient } from "@/lib/supabase/client"
-import { User, Upload, Camera, ShieldAlert } from "lucide-react"
+import { User, Upload, Camera, ShieldAlert, Key, Eye, EyeOff } from "lucide-react"
 
 export default function PerfilPage() {
   const [userId, setUserId] = useState<string | null>(null)
@@ -12,6 +12,14 @@ export default function PerfilPage() {
   const [avatarUrl, setAvatarUrl] = useState("")
   const [saving, setSaving] = useState(false)
   const [message, setMessage] = useState<{ type: "success" | "error"; text: string } | null>(null)
+  
+  // Password state
+  const [newPassword, setNewPassword] = useState("")
+  const [confirmPassword, setConfirmPassword] = useState("")
+  const [showPassword, setShowPassword] = useState(false)
+  const [updatingPassword, setUpdatingPassword] = useState(false)
+  const [passwordMessage, setPasswordMessage] = useState<{ type: "success" | "error"; text: string } | null>(null)
+
   const fileInputRef = useRef<HTMLInputElement>(null)
 
   useEffect(() => {
@@ -57,6 +65,46 @@ export default function PerfilPage() {
     }
   }
 
+  async function handleUpdatePassword(e: React.FormEvent) {
+    e.preventDefault()
+    if (!userId) return
+    if (!newPassword) {
+      setPasswordMessage({ type: "error", text: "Digite a nova senha." })
+      return
+    }
+    if (newPassword.length < 6) {
+      setPasswordMessage({ type: "error", text: "A nova senha deve ter pelo menos 6 caracteres." })
+      return
+    }
+    if (newPassword !== confirmPassword) {
+      setPasswordMessage({ type: "error", text: "As senhas não coincidem." })
+      return
+    }
+
+    setUpdatingPassword(true)
+    setPasswordMessage(null)
+
+    try {
+      const res = await fetch("/api/profile/password", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ userId, password: newPassword }),
+      })
+      const data = await res.json()
+      if (res.ok) {
+        setPasswordMessage({ type: "success", text: "Sua senha foi atualizada com sucesso!" })
+        setNewPassword("")
+        setConfirmPassword("")
+      } else {
+        setPasswordMessage({ type: "error", text: data.error || "Erro ao atualizar a senha" })
+      }
+    } catch {
+      setPasswordMessage({ type: "error", text: "Erro de conexão ao atualizar senha" })
+    } finally {
+      setUpdatingPassword(false)
+    }
+  }
+
   async function handleFileUpload(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0]
     if (!file || !userId) return
@@ -90,7 +138,7 @@ export default function PerfilPage() {
       <div className="p-8 max-w-2xl mx-auto space-y-8">
         <div>
           <h1 className="text-2xl font-bold text-slate-800 tracking-tight">Meu Perfil</h1>
-          <p className="text-sm text-slate-400 mt-1">Gerencie suas informações pessoais</p>
+          <p className="text-sm text-slate-400 mt-1">Gerencie suas informações pessoais e de acesso</p>
         </div>
 
         {/* Foto */}
@@ -123,8 +171,10 @@ export default function PerfilPage() {
           </div>
         </div>
 
-        {/* Informações */}
+        {/* Informações Pessoais */}
         <div className="bg-white rounded-xl border border-slate-200 p-8 shadow-sm space-y-6">
+          <h2 className="text-lg font-bold text-slate-800 tracking-tight border-b border-slate-100 pb-3">Informações Cadastrais</h2>
+
           <div className="space-y-2">
             <label className="text-sm font-medium text-slate-400">Email (acesso ao sistema)</label>
             <input
@@ -176,7 +226,67 @@ export default function PerfilPage() {
             {saving ? "Salvando..." : "Salvar Alterações"}
           </button>
         </div>
+
+        {/* Atualizar Senha Sem Senha Antiga */}
+        <div className="bg-white rounded-xl border border-slate-200 p-8 shadow-sm space-y-6">
+          <div className="flex items-center gap-2 border-b border-slate-100 pb-3">
+            <Key className="h-5 w-5 text-indigo-500" />
+            <h2 className="text-lg font-bold text-slate-800 tracking-tight">Alterar Senha</h2>
+          </div>
+          
+          <form onSubmit={handleUpdatePassword} className="space-y-4">
+            <div className="space-y-2">
+              <label className="text-sm font-medium text-slate-600">Nova Senha</label>
+              <div className="relative">
+                <input
+                  type={showPassword ? "text" : "password"}
+                  value={newPassword}
+                  onChange={(e) => setNewPassword(e.target.value)}
+                  placeholder="Mínimo de 6 caracteres"
+                  className="flex h-11 w-full rounded-xl border border-slate-200 bg-white px-4 py-2 pr-10 text-sm text-slate-800 focus:outline-none focus:ring-2 focus:ring-indigo-500/50 focus:border-indigo-500 transition-all"
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowPassword(!showPassword)}
+                  className="absolute right-3 top-3 text-slate-400 hover:text-slate-600"
+                >
+                  {showPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
+                </button>
+              </div>
+            </div>
+
+            <div className="space-y-2">
+              <label className="text-sm font-medium text-slate-600">Confirmar Nova Senha</label>
+              <input
+                type={showPassword ? "text" : "password"}
+                value={confirmPassword}
+                onChange={(e) => setConfirmPassword(e.target.value)}
+                placeholder="Repita a nova senha"
+                className="flex h-11 w-full rounded-xl border border-slate-200 bg-white px-4 py-2 text-sm text-slate-800 focus:outline-none focus:ring-2 focus:ring-indigo-500/50 focus:border-indigo-500 transition-all"
+              />
+            </div>
+
+            {passwordMessage && (
+              <p className={`text-sm rounded-lg px-3 py-2 border ${
+                passwordMessage.type === "success"
+                  ? "text-emerald-600 bg-emerald-50 border-emerald-200"
+                  : "text-red-500 bg-red-50 border-red-200"
+              }`}>
+                {passwordMessage.text}
+              </p>
+            )}
+
+            <button
+              type="submit"
+              disabled={updatingPassword || !userId}
+              className="inline-flex h-11 w-full items-center justify-center rounded-xl bg-indigo-600 hover:bg-indigo-700 text-sm font-semibold text-white shadow-md transition-all disabled:opacity-60"
+            >
+              {updatingPassword ? "Atualizando Senha..." : "Atualizar Senha"}
+            </button>
+          </form>
+        </div>
       </div>
     </div>
   )
 }
+

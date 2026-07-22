@@ -1,9 +1,10 @@
 # KLAWS CRM — PROJECT STATE
 
 **Data:** 2026-07-22
-**Versão:** 1.2
-**Sprint Atual:** Sprint 1.8R (Integração CRM Chat → Agente_Comprovante com binário)
-**Commit:** `a2a0103` (Sprint 1.8R - integração binário)
+**Versão:** 1.3
+**Sprint Atual:** Sprint 1.8 — OCR LOCAL (Tesseract via microservice HTTP)
+**Release:** v0.1.0-alpha
+**Commit:** *(pendente — chore: prepare repository for v0.1.0-alpha)*
 **Branch:** `master`
 
 ---
@@ -12,12 +13,12 @@
 
 | Métrica | Valor |
 |---|---|
-| **Health Score** | 50/100 |
-| **Maturidade (0-10)** | 5.0 / 10 |
+| **Health Score** | 55/100 |
+| **Maturidade (0-10)** | 5.5 / 10 |
 | **Risco Atual** | 🟠 MÉDIO |
 | **Domínio mais maduro** | Frontend (Next.js + Auth + UI) — 85% |
-| **Domínio mais crítico** | Automações n8n (workflows incompletos, webhook instável) — 35% |
-| **Blockers ativos** | Migration 003 não aplicada, Google Calendar OAuth não configurado, OCR.space API key ausente |
+| **Domínio mais crítico** | Automações n8n (workflows incompletos, webhook instável) — 40% |
+| **Blockers ativos** | Migration 003 não aplicada, Google Calendar OAuth não configurado |
 | **Recomendação** | CONTINUAR — com correções urgentes de segurança e estabilidade |
 
 ---
@@ -71,13 +72,13 @@
 | Funções/Triggers | ✅ handle_new_user | Cria profile ao registrar |
 | Views SQL | ❌ Não implementado | Dashboard usa API Route direto |
 
-### Automações (n8n) — 🟠 45%
+### Automações (n8n) — 🟠 40%
 
 | Workflow | Status | Obs |
 |---|---|---|
 | CRM Chat (WFCRM001chat01) | ✅ Ativo | 18 nós, Master Router + Detectar Comprovante + Code node (Enviar para Agente Comprovante) |
-| Agente_Comprovante (WFCRM001comp01) | ✅ Ativo | 6 nós: Webhook → Validar → Valido? → TEM BINARIO? → Write Binary File → Set Metadados → Responder |
-| Agente Comprovante/OCR (WFCRM001ocr01) | ❌ Falhando | HTTP 400 — OCR.space API key inválida |
+| Agente_Comprovante (WFCRM001comp01) | ✅ Ativo | 10 nós: Webhook → Validar → Valido? → TEM BINARIO? → Write Binary File → **EXECUTAR OCR (Tesseract)** → **SALVAR OCR .TXT** → Set Metadados → RESPOSTA SUCESSO / RESPOSTA ERRO |
+| Agente Comprovante/OCR (WFCRM001ocr01) | ❌ **Desativado** | Continha `$env` — runner bloqueia todas variáveis de ambiente |
 | Agente_Agendamento (UH5kg99biTCqPZ1F) | ❌ Inativo | Telegram trigger, 10 nós |
 | Master Router (IF chain) | ✅ Implementado | 5 IF nodes: Comprovante?, Imagem?, PDF?, Audio?, Video? → fallback DADOS |
 | Agente Conciliação | ❌ Não existe | Workflow não criado |
@@ -103,12 +104,16 @@
 | Drive OAuth | ❌ Não configurado | — |
 | Drive Storage | ❌ Não configurado | — |
 
-### OCR — 🔴 10%
+### OCR — 🟡 40%
 
 | Item | Status | Obs |
 |---|---|---|
-| OCR.space Workflow | ❌ Falhando | HTTP 400 — API key inválida/ausente |
-| OCR.space API Key | ❌ Não configurada | Não encontrada no projeto |
+| OCR.space Workflow | ❌ **Removido** | `$env` bloqueado pelo runner — impossível usar API key |
+| OCR.space API Key | ❌ Bloqueada | N8N_RUNNERS_ENABLED=true impede acesso a `$env` em QUALQUER contexto |
+| Tesseract LOCAL | ✅ **Funcional** | Microserviço HTTP (ocr-service:3002) com Alpine + tesseract-ocr |
+| EXECUTAR OCR (Code node) | ✅ Funcional | Lê binary via `$binary` + `getBinaryDataBuffer`, chama ocr-service, retorna resultado + .txt binário |
+| SALVAR OCR .TXT | ✅ Funcional | Write Binary File salva .txt em `/home/node/.n8n-files/comprovantes/processados/` |
+| Fallback OCR.space → Tesseract | ❌ Não implementado | `$env` bloqueado impede ambas as abordagens com API key |
 | Playwright OCR | ❌ Não implementado | Mencionado na arquitetura |
 
 ### Conciliação — 🔴 0%
@@ -127,14 +132,14 @@
 | Bot Token | ❌ Não verificado | — |
 | Integração funcional | ❌ Não existe | — |
 
-### DevOps/Docker — 🟡 60%
+### DevOps/Docker — 🟡 65%
 
 | Item | Status | Obs |
 |---|---|---|
-| Docker Compose | ✅ 3 serviços | waha, n8n, crm |
+| Docker Compose | ✅ 4 serviços | waha, n8n, crm, **ocr-service** |
 | Volumes persistentes | ✅ Configurados | n8n data, waha sessions, crm code |
 | Networks | ✅ bridge automation | — |
-| Portas | ✅ 3000, 5678, 3001 | — |
+| Portas | ✅ 3000, 5678, 3001, 3002 | — |
 | Healthchecks | ❌ Ausentes | Nenhum container |
 | Secrets management | ❌ Hardcoded | N8N_ENCRYPTION_KEY, WAHA_API_KEY no compose |
 | ngrok URL | ⚠️ Hardcoded | Tunnel público instável |
@@ -168,24 +173,22 @@
 ## DÍVIDA TÉCNICA PRIORITÁRIA
 
 | # | Item | Domínio | Esforço | Risco se não feito |
-|---|---|---|---|---|
+|---|---|---|---|---|---|
 | 1 | Aplicar Migration 003 | Banco | 5min | **CRÍTICO** — buffer/agentes não funcionam |
 | 2 | Exportar backup JSON workflows | n8n | 30min | **CRÍTICO** — perda total de automações |
-| 3 | Configurar OCR.space API Key | OCR | 15min | **CRÍTICO** — OCR 100% quebrado |
-| 4 | Google Calendar OAuth redirect URI | Google | 1h | **ALTO** — Agenda não funciona |
-| 5 | Remover N8N_ENCRYPTION_KEY do compose | Segurança | 15min | **ALTO** — descriptografia de credenciais |
-| 6 | Corrigir webhookId null | n8n | 2h | **ALTO** — chat cai após restart |
-| 7 | Criar webhook WAHA no n8n | n8n | 1h | **ALTO** — WhatsApp não processa |
-| 8 | Implementar Master Router Switch | n8n | ✅ Concluído | IF chain (image/pdf/audio/video/text) |
-| 9 | Adicionar RLS em tabelas existentes | Banco | 1h | **ALTO** — dados expostos |
-| 10 | Implementar OCR no Agente_Comprovante | n8n | 2h | **MÉDIO** — OCR ainda não lê comprovantes |
-| 11 | Criar Agente Conciliação workflow | n8n | 4h | **MÉDIO** — conciliação não processa |
-| 12 | Auto-toggle webhook no startup | n8n | 2h | **MÉDIO** — downtime pós-restart |
-| 13 | Loop O(n²) em sync-funcionarios | API | 1h | **MÉDIO** — timeout com +200 users |
-| 14 | Healthcheck Docker | DevOps | 1h | **MÉDIO** — sem monitoramento |
-| 15 | Remover ngrok.exe do git | Git | 1min | **BAIXO** — poluição |
-| 16 | Mover scripts debug para pasta | Organização | 30min | **BAIXO** — poluição |
-| 17 | Testes E2E chat/dashboard/admin | Testes | 2d | **BAIXO** — regressões silenciosas |
+| 3 | Google Calendar OAuth redirect URI | Google | 1h | **ALTO** — Agenda não funciona |
+| 4 | Remover N8N_ENCRYPTION_KEY do compose | Segurança | 15min | **ALTO** — descriptografia de credenciais |
+| 5 | Corrigir webhookId null | n8n | 2h | **ALTO** — chat cai após restart |
+| 6 | Criar webhook WAHA no n8n | n8n | 1h | **ALTO** — WhatsApp não processa |
+| 7 | Implementar Master Router Switch | n8n | ✅ Concluído | IF chain (image/pdf/audio/video/text) |
+| 8 | Adicionar RLS em tabelas existentes | Banco | 1h | **ALTO** — dados expostos |
+| 9 | Criar Agente Conciliação workflow | n8n | 4h | **MÉDIO** — conciliação não processa |
+| 10 | Auto-toggle webhook no startup | n8n | 2h | **MÉDIO** — downtime pós-restart |
+| 11 | Loop O(n²) em sync-funcionarios | API | 1h | **MÉDIO** — timeout com +200 users |
+| 12 | Healthcheck Docker | DevOps | 1h | **MÉDIO** — sem monitoramento |
+| 13 | Remover ngrok.exe do git | Git | 1min | **BAIXO** — poluição |
+| 14 | Mover scripts debug para pasta | Organização | 30min | **BAIXO** — poluição |
+| 15 | Testes E2E chat/dashboard/admin | Testes | 2d | **BAIXO** — regressões silenciosas |
 
 ---
 
@@ -194,7 +197,6 @@
 | Blocker | Impacto | Para desbloquear |
 |---|---|---|
 | Migration 003 não aplicada | Tabelas comprovantes, agentes_config, message_buffer não existem | Executar SQL no Supabase SQL Editor |
-| OCR.space API key ausente | Workflow OCR 100% falhando (HTTP 400) | Obter chave em ocr.space e configurar no n8n |
 | Google Calendar OAuth redirect não registrado | Ferramentas de calendário no AI Agent quebradas | Adicionar redirect URI no Google Cloud Console |
 | WAHA webhook não existe no n8n | Mensagens WhatsApp não processadas | Criar webhook /webhook/waha no n8n |
 | webhookId null (CRM Chat) | Webhook some após restart do n8n | Reativar manualmente ou corrigir workflow |
@@ -215,7 +217,7 @@
 | **Dashboard** | Consome Supabase (views/APIs), nunca workflows | ✅ Conforme | — |
 | **Google Calendar** | Fonte oficial da agenda | ⚠️ Tools no AI Agent, sem auth | Parcial |
 | **Google Drive** | Apenas documentos, nunca banco | ❌ Não configurado | — |
-| **OCR** | OCR.space + Playwright | ❌ Workflow existe mas falha | — |
+| **OCR** | OCR.space + Playwright | ✅ Tesseract LOCAL via microserviço HTTP (ocr-service:3002) | **OK** — funcional, sem dependência externa |
 | **Conciliação** | Extrato + CTN + divergências | ❌ Não implementado | — |
 
 ---
@@ -227,6 +229,8 @@
 | Login → Dashboard | ✅ OK | Testado manualmente + Playwright |
 | Chat (texto) → Webhook → Buffer → Master Router (IF chain) → DADOS → AI Agent → Resposta | ✅ OK | Testado manualmente com POST /webhook/crm-chat |
 | File upload → Webhook → Buffer → Master Router (IF chain) → OCR_PENDING (Imagem/PDF) / AUDIO_PENDING / VIDEO_PENDING | ⚠️ Placeholder | Roteamento funciona, nós placeholder sem lógica |
+| Webhook → Agente_Comprovante → VALIDAR ARQUIVO → EXECUTAR OCR (Tesseract) → SALVAR OCR .TXT → RESPOSTA | ✅ OK | OCR funcional, .txt em disco, erros propagados |
+| OCR service indisponível → erro_conexao | ✅ OK | Graceful handle com ocr_erro no response |
 | WAHA → Webhook → n8n | ❌ Falha | Webhook não existe |
 | Google Calendar → Criar evento | ❌ Falha | OAuth incompleto |
 | Admin → Sync funcionarios | ✅ OK | Testado manualmente |
@@ -249,12 +253,12 @@
 | Tabelas Supabase (pendentes) | 3 |
 | Workflows n8n ativos | 3 (2 funcionais, 1 falhando) |
 | Workflows n8n inativos | 1 |
-| Containers Docker | 3 |
-| Scripts debug (.js/.py/.bat) | 75+ |
+| Containers Docker | 4 |
+| Scripts debug (.js/.py/.bat) | 80+ |
 | Testes E2E | 3 (1 spec) |
-| Bugs conhecidos | 10 |
-| Pendências abertas | 23 |
-| Dívida técnica (itens) | 17 |
+| Bugs conhecidos | 9 |
+| Pendências abertas | 22 |
+| Dívida técnica (itens) | 15 |
 
 ---
 
@@ -395,3 +399,102 @@ n8n com `N8N_RUNNERS_ENABLED=true` proíbe todos `require()` em Code nodes:
 **Workflows alterados via API:**
 - CRM Chat (WFCRM001chat01): HTTP Request → Code node "Enviar para Agente Comprovante" (base64), removidos 2 nodes órfãos
 - Agente_Comprovante (WFCRM001comp01): VALIDAR ARQUIVO atualizado (base64 decode, 20MB limit), removidos 10 nodes órfãos
+
+---
+
+## Sprint 1.8 — OCR LOCAL (Tesseract via Microserviço HTTP) (2026-07-22)
+
+**Objetivo:** Adicionar OCR ao Agente_Comprovante usando Tesseract (fallback gratuito) sem depender de OCR.space (API key bloqueada pelo runner).
+
+### Problema
+
+`N8N_RUNNERS_ENABLED=true` bloqueia `$env` em **todos** os contextos (Code nodes, IF nodes, Set nodes, HTTP Request nodes). Sem `$env`, é impossível configurar a API key do OCR.space. Além disso, o container n8n é Alpine hardened sem package manager (sem apk/apt) — não é possível instalar Tesseract nele.
+
+### Solução Arquitetural
+
+```
+n8n container  ──HTTP──>  ocr-service:3002  (Alpine + tesseract-ocr + nodejs)
+                               │
+                          automation network
+```
+
+Microserviço HTTP independente que recebe base64Image, salva em /tmp/, executa `tesseract`, retorna texto.
+
+### Mudanças
+
+**Novo container: `ocr-service`**
+- `ocr-service/Dockerfile` — Alpine + tesseract-ocr + nodejs + express
+- `ocr-service/server.js` — POST /ocr (base64Image → tesseract → texto), GET /health
+- `ocr-service/package.json` — express (sem multer, usa JSON/base64)
+
+**docker-compose.yml:**
+- Adicionado serviço `ocr-service` na porta 3002, rede `automation`
+- Adicionado `OCR_SPACE_API_KEY` (não utilizado — mantido para referência)
+
+**Workflow Agente_Comprovante (WFCRM001comp01) — 10 nós:**
+- Webhook Comprovante → VALIDAR ARQUIVO → Valido? → TEM BINARIO? → Write Binary File → **EXECUTAR OCR** → **SALVAR OCR .TXT** → Set Metadados → RESPOSTA SUCESSO / RESPOSTA ERRO
+- EXECUTAR OCR: Code node que lê binary via `$binary`/`getBinaryDataBuffer`, chama `this.helpers.httpRequest()` para ocr-service, cria .txt como binary output
+- SALVAR OCR .TXT: Write Binary File salva em `/home/node/.n8n-files/comprovantes/processados/`
+
+### Bugs Críticos Encontrados
+
+| Bug | Causa | Solução |
+|---|---|---|
+| **`$input` causa SyntaxError no runner** | Runner JS Task Runner transforma `$input` em `items` mas regex quebra em `$input.all()` | Usar `items` diretamente (runner fornece) |
+| **`const items = items` causa TDZ** | Ao remover `$input.all()`, sobra `const items = items` (autorreferência) | Remover declaração `const items` — runner já declara |
+| **WriteBinaryFile resolvePath** | `fs.realpath` falha se diretório pai não existe | Criar diretório `processados/` manualmente |
+| **WFCRM001ocr01 contamina logs** | Workflow antigo com `$env` causa erros no runner global | Desativar WFCRM001ocr01 permanentemente |
+
+### Aprendizados Técnicos
+
+1. **Runner JS Task Runner** não suporta `$input` — usar `items` diretamente (array de itens)
+2. `$binary` e `$json` funcionam normalmente no runner (só `$input` é problemático)
+3. `this.helpers.httpRequest()` funciona no runner (substituto de HTTP Request node)
+4. `this.helpers.getBinaryDataBuffer(0, "propertyName")` — segundo parâmetro deve ser STRING (nome da propriedade), não o objeto binary
+5. Runner wrapper declara `const items` internamente → re-declarar `const items` causa TDZ
+6. Docker DNS (`EAI_AGAIN`) para `ocr-service` foi transitório — ambos na mesma network `automation`
+
+### Workflows Desativados
+
+- **WFCRM001ocr01** (Agente Comprovante/OCR) — desativado permanentemente. Continha `$env` references que geravam `"Cannot assign to read only property 'name' of object 'Error: access to env vars denied'"` e contaminavam todos os logs do n8n.
+
+### Testes (6 cenários, 6/6 pass)
+
+| # | Cenário | Resultado |
+|---|---|---|
+| 1 | PDF → Webhook → VALIDAR → OCR (Tesseract não lê PDF) → erro | ✅ PASS — HTTP 200, status success, ocr_status="erro" |
+| 2 | JPG → Webhook → VALIDAR → OCR → erro (test image sem pixels) | ✅ PASS — HTTP 200, status success, ocr_status="erro" |
+| 3 | PNG → Webhook → VALIDAR → OCR → erro (test image sem pixels) | ✅ PASS — HTTP 200, status success, ocr_status="erro" |
+| 4 | OCR indisponível (service down) → erro_conexao | ✅ PASS — ocr_erro="erro_conexao: getaddrinfo EAI_AGAIN" |
+| 5 | Arquivo corrompido → OCR → erro Tesseract | ✅ PASS — ocr_erro="Command failed: tesseract ..." |
+| 6 | .txt files no disco | ✅ PASS — 7 arquivos .txt em processados/ |
+
+### Arquivos criados
+
+- `ocr-service/Dockerfile` — build Tesseract microservice
+- `ocr-service/server.js` — Express HTTP API (POST /ocr, GET /health)
+- `ocr-service/package.json` — dependências
+- `sprint18.js` — script de deploy + testes (versão final)
+- `backup_WFCRM001comp01_pre_ocr_*.json` — backups do workflow
+
+### Arquivos alterados
+
+- `docker-compose.yml` — adicionado ocr-service, OCR_SPACE_API_KEY
+- `.ai/PROJECT_STATE.md` — documentação Sprint 1.8
+
+---
+
+## PRÓXIMOS OBJETIVOS (Sprint 2)
+
+| Prioridade | Objetivo | Domínio |
+|---|---|---|
+| 🔴 Crítico | Aplicar Migration 003 | Banco |
+| 🔴 Crítico | Exportar backup JSON workflows | n8n |
+| 🟡 Alto | Configurar Google Calendar OAuth redirect | Google |
+| 🟡 Alto | Remover secrets do docker-compose.yml | Segurança |
+| 🟡 Alto | Corrigir webhookId null (CRM Chat) | n8n |
+| 🟡 Alto | Criar webhook WAHA no n8n | n8n |
+| 🟡 Alto | Adicionar RLS em tabelas existentes | Banco |
+| 🟢 Médio | Criar Agente Conciliação workflow | n8n |
+| 🟢 Médio | Auto-toggle webhook no startup | n8n |
+| 🟢 Médio | Healthcheck Docker | DevOps |
