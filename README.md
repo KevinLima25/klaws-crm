@@ -103,6 +103,7 @@ Os scripts `sprint*.js` realizam deploy e testes dos workflows no n8n via API.
 |---|---|---|
 | CRM Chat | WFCRM001chat01 | Chat web + WhatsApp, Master Router, detecção de comprovantes |
 | Agente Comprovante | WFCRM001comp01 | Recebe arquivos, valida, salva, executa OCR, responde |
+| WAHA Webhook | WgnQElkUjRP7f0J4 | Recebe mensagens WhatsApp e encaminha ao CRM Chat |
 | Agente Comprovante (OCR) | WFCRM001ocr01 | Desativado (possuía dependência de env vars) |
 | Agente Agendamento | UH5kg99biTCqPZ1F | Inativo (Telegram) |
 
@@ -126,7 +127,8 @@ Webhook → VALIDAR ARQUIVO → Valido? → TEM BINARIO? → Write Binary File
 4. ✅ Sprint 1.7R — Refatoração para nós nativos
 5. ✅ Sprint 1.8R — Integração binário CRM Chat → Comprovante
 6. ✅ Sprint 1.8 — OCR Local com Tesseract
-7. 🔜 Sprint 2 — Agente Conciliação, Google Calendar, WAHA webhook
+7. ✅ Sprint 1.9 — Estabilização (Migration 003, WAHA, backups)
+8. 🔜 Sprint 2 — Conciliação Bancária, Google Calendar
 
 ## Licença
 

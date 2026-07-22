@@ -1,42 +1,34 @@
-# RISKS — Riscos, Dívida Técnica e Melhorias
+# KLAWS CRM — Riscos, Dívida Técnica e Melhorias
 
 ## Riscos (Possíveis Problemas em Produção)
 
 | Risco | Impacto | Probabilidade | Mitigação |
 |---|---|---|---|
-| **Webhook não persiste pós-restart** | Chat fica offline até re-toggle manual | Alta (100% dos restart) | `toggle_webhook.js` + `restart_n8n.bat` criados como workaround. Pendente: script no entrypoint do container |
-| **HTTP Request node v4.2 com TypeError** | Não é possível usar HTTP Request node para POST/PUT com `sendBody:true` | Alta | Workaround com Code node + `this.helpers.httpRequest()`. Limita uso de nós visuais |
-| **Migration SQL não aplicada** | `message_buffer`, `comprovantes`, `agentes_config` não existem no Supabase | Alta | Pendente — depende de ação manual |
-| **n8n API Key exposta no `toggle_webhook.js`** | Qualquer um com acesso ao código pode chamar a API do n8n | Média | Chave está no DB (`user_api_keys`). Ideal: mover para env var do container |
 | **Google Calendar OAuth não configurado** | AI Agent não consegue criar/verificar/deletar eventos | Alta | Pendente — redirect URI precisa ser registrada no Google Cloud Console |
-| **ngrok.exe no repositório** | Executável binário versionado (6.5MB) | Baixa | Deveria estar em `.gitignore` ou em path separado |
+| **Gemini AI rate limiting** | Workflows que usam AI Agent podem falhar intermitentemente | Média | Retry nodes no n8n podem ser configurados |
+| **WAHA sessão não autenticada** | Mensagens WhatsApp não são recebidas | Alta (até scan QR) | Pendente — scan manual do QR code via WAHA Dashboard |
+| **n8n webhookId=null** | Webhooks podem parar de funcionar após restart | Média | Path-based webhooks funcionam na prática; reativar workflow se necessário |
+| **Secrets hardcoded no docker-compose.yml** | N8N_ENCRYPTION_KEY, WAHA_API_KEY expostos no versionamento | Alta | Pendente — mover para Docker Secrets ou .env não versionado |
+| **Migration 003 não aplicada (parcial)** | agentes_config tem dados, message_buffer pode não ter RLS | Baixa | Migration contém INSERTs que já foram executados (duplicatas ignoradas por ON CONFLICT) |
 
 ## Dívida Técnica
 
 | Item | Descrição | Prioridade |
 |---|---|---|
-| **Workflow linear sem router** | O workflow mestre não implementa Switch de arquivo. Agentes Comprovante e Conciliação nem existem | Alta |
-| **Sem testes E2E para fluxo chat** | Apenas `login.spec.ts` existe. Fluxo de envio de mensagem não é testado | Média |
-| **Credenciais hardcoded** | Supabase Service Key, n8n API Key, OCR.space API Key estão em texto puro em arquivos | Alta |
-| **Scripts de debug poluindo raiz** | ~40+ scripts `.js` avulsos na raiz do projeto de debug do n8n | Baixa |
-| **Sem tratamento de erro no Code node** | O Code node "Salvar no Buffer" não trata falha da requisição HTTP | Média |
-| **n8n rodando sem healthcheck** | Docker compose não tem healthcheck para o n8n; `toggle_webhook.js` faz polling manual | Baixa |
+| **Sem testes E2E para fluxo chat** | Apenas `login.spec.ts` existe | Média |
+| **Scripts de debug na raiz** | ~10 scripts `.js` na raiz do projeto | Baixa |
+| **Sem tratamento de erro no Code node** | Code node "Salvar no Buffer" não trata falha | Média |
+| **n8n rodando sem healthcheck** | Docker compose sem healthcheck | Baixa |
+| **WAHA Dashboard credentials versionadas** | Username/password em texto puro no docker-compose | Alta |
+| **Frontend monolítico** | `chat-interface-v2.tsx` com 374 linhas | Baixa |
 
 ## Melhorias Futuras
 
 | Melhoria | Benefício |
 |---|---|
-| Criar entrypoint script no container n8n que faz toggle automático no startup | Elimina passo manual pós-restart |
-| Migrar do Code node para HTTP Request node (quando bug for corrigido) | Preserva consistência visual do workflow |
-| Adicionar testes E2E com Playwright para fluxo chat | Detecção precoce de regressão |
-| Mover credenciais para secrets do Docker ou Supabase Vault | Segurança |
-| Implementar Agente Comprovante (OCR) + Agente Conciliação (CTN+Extrato) | Fluxo completo de automação |
-| Aplicar migration SQL no Supabase | Tabelas necessárias para buffer e comprovantes |
-
-## Código que Merece Refatoração
-
-| Arquivo | Problema | Sugestão |
-|---|---|---|
-| `chat-interface-v2.tsx` | 374 linhas, lógica de API + estado + UI misturados | Extrair hooks `useChat`, `useFileUpload` |
-| `toggle_webhook.js` | n8n API Key hardcoded | Ler de env var `N8N_API_KEY` |
-| `fix_*.js` / `check_*.js` (40+ scripts) | Código duplicado de debugging | Manter apenas os essenciais; remover após estabilização |
+| Autenticar WAHA session (scan QR code) | Ativar recebimento de mensagens WhatsApp |
+| Configurar Google Calendar OAuth | AI Agent pode gerenciar agenda |
+| Mover credenciais para Docker Secrets | Segurança |
+| Adicionar healthchecks nos containers | Monitoramento |
+| Implementar Agente Conciliação | Fluxo completo de conciliação bancária |
+| Migrar para HTTP Request node (quando bug for corrigido) | Consistência visual do workflow |

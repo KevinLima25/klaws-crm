@@ -1,42 +1,44 @@
-# CRM Chat n8n Workflow - Status Atual
+# KLAWS CRM — Status Atual
 
-## Webhook
-- **URL:** `POST /webhook/crm-chat`
-- **Status:** Funcionando (após re-toggle via API)
-- **Nota:** Após restart do n8n, executar `restart_n8n.bat` (ou `node toggle_webhook.js`) para re-registrar o webhook
+## Workflows n8n
 
-## Workflow (CRM Chat - Simplified Webhook, ID: WFCRM001chat01)
-```
-CRM Webhook → Salvar no Buffer (Code) → DADOS (Set) → AI Agent (Gemini) → Format Response (Set)
-```
+### 1. CRM Chat (WFCRM001chat01)
+- **Webhook:** `POST /webhook/crm-chat`
+- **Status:** ✅ Funcional
+- **Pipeline:** Webhook → Salvar Buffer → Master Router (IF chain) → AI Agent (Gemini) → Response
+- **Master Router:** 5 IF nodes: Comprovante? → Imagem? → PDF? → Audio? → Video? → fallback DADOS (texto)
 
-### Nodes
-1. **CRM Webhook** - POST /crm-chat, responseMode: lastNode
-2. **Salvar no Buffer** (Code) - Salva mensagem no Supabase `message_buffer`
-3. **DADOS** (Set) - Prepara dados para o AI Agent
-4. **AI Agent** (Gemini) - Processa com Google Gemini + Google Calendar tools
-5. **Format Response** (Set) - Formata resposta JSON `{ "text": "..." }`
+### 2. Agente_Comprovante (WFCRM001comp01)
+- **Webhook:** `POST /webhook/comprovante`
+- **Status:** ✅ Funcional
+- **Pipeline:** Webhook → VALIDAR ARQUIVO → Valido? → TEM BINARIO? → Write Binary File → EXECUTAR OCR (Tesseract) → SALVAR OCR .TXT → Set Metadados → RESPOSTA SUCESSO / RESPOSTA ERRO
+- **OCR Local:** Tesseract via microserviço HTTP (ocr-service:3002)
 
-## Buffer (Supabase message_buffer)
-- Mensagens salvas automaticamente pelo Code node
-- Colunas: `id, user_id, message, file_name, file_type, file_data, processed, created_at`
-- Usa `this.helpers.httpRequest()` para bypass do TypeError do HTTP Request node
+### 3. WAHA Webhook (WgnQElkUjRP7f0J4)
+- **Webhook:** `POST /webhook/waha`
+- **Status:** ✅ Webhook ativo, transporte validado
+- **Pipeline:** Webhook → Encaminhar CRM Chat → Response
+- **Nota:** Depende do Gemini AI — respostas podem falhar com rate limiting da API
 
-## Frontend
+### 4. Agente_Agendamento (UH5kg99biTCqPZ1F)
+- **Status:** ❌ Inativo
+- **Trigger:** Telegram (não configurado)
+
+## WAHA (WhatsApp)
+- **Container:** ✅ Running (devlikeapro/waha, engine WEBJS)
+- **Sessão:** ✅ Criada (webjs) — aguardando scan QR code para autenticar
+- **Webhook n8n:** ✅ Criado em `/webhook/waha`
+- **Transporte:** ✅ Validado — mensagens são encaminhadas ao CRM Chat
+
+## Frontend (CRM Web)
 - **URL:** http://localhost:3001
-- **Webhook:** `NEXT_PUBLIC_N8N_WEBHOOK_URL=http://localhost:5678/webhook/crm-chat`
-- Envia FormData: `user_id, name, cargo, message, source=web_crm, files`
-- Espera resposta JSON com campo `text`
+- **Login:** ✅ Funcional
+- **Dashboard:** ✅ Funcional (vendas + adimplência)
+- **Chat:** ✅ Funcional (envia para n8n CRM Chat)
+- **Perfil:** ✅ Funcional (avatar, nome, cargo)
+- **Admin:** ✅ Funcional (usuários, agentes config)
 
-## Para reiniciar o n8n
-```powershell
-docker compose -f docker-compose.yml restart n8n
-# Aguardar 15s
-node toggle_webhook.js
-```
-Ou usar: `restart_n8n.bat`
-
-## Problemas Conhecidos
-1. **Webhook não persiste após restart** - Bug no n8n 2.30.7 (webhooks sem webhookId não são registrados na inicialização). Solução: API toggle via `toggle_webhook.js`
-2. **HTTP Request node typeVersion 4.2** - TypeError em POST/PUT com `sendBody:true`. Workaround: usar Code node com `this.helpers.httpRequest()`
-3. **API deactivate/activate requer body `{}`** - O endpoint espera um DTO, mesmo vazio
+## Webhook Persistence
+- **Bug:** `webhookId=null` para todos os webhooks — limitação do n8n 2.30.7
+- **Status:** Webhooks funcionam mesmo com `webhookId=null` — o registro persiste via `webhook_entity` (path-based)
+- **Recomendação:** Após restart do n8n, verificar se webhooks estão registrados. Reactivar workflow se necessário.

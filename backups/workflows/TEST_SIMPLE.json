@@ -1,0 +1,106 @@
+{
+  "id": "hE98JJ7xVSjqfaNL",
+  "name": "TEST_SIMPLE",
+  "active": true,
+  "nodes": [
+    {
+      "id": "6fa1e80726e04e159938c2aca9734e03",
+      "name": "Webhook",
+      "typeVersion": 1,
+      "type": "n8n-nodes-base.webhook",
+      "position": [
+        250,
+        300
+      ],
+      "parameters": {
+        "path": "test-simple",
+        "options": {},
+        "responseMode": "onReceived",
+        "responseData": "allEntries",
+        "respondTo": {
+          "webhook": "POST"
+        }
+      },
+      "webhookId": "cc94c4da-bf54-4c19-9c82-203a61f88902"
+    },
+    {
+      "id": "9a26eb0b9e024d12bf11c1f69628a254",
+      "name": "Set",
+      "typeVersion": 3.4,
+      "type": "n8n-nodes-base.set",
+      "position": [
+        450,
+        300
+      ],
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "1",
+              "name": "status",
+              "value": "ok",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {},
+        "includeOtherFields": true
+      }
+    },
+    {
+      "id": "11a14bcc977c4904be8e0437ad472c65",
+      "name": "Response",
+      "typeVersion": 1,
+      "type": "n8n-nodes-base.respondToWebhook",
+      "position": [
+        650,
+        300
+      ],
+      "parameters": {
+        "respondWith": "json",
+        "options": {},
+        "responseBodyType": "firstItemJson",
+        "responseData_simple": [
+          {
+            "id": "1",
+            "name": "status",
+            "value": "={{ \\.status }}",
+            "type": "string"
+          }
+        ]
+      }
+    }
+  ],
+  "connections": {
+    "Webhook": {
+      "main": [
+        [
+          {
+            "node": "Set",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Set": {
+      "main": [
+        [
+          {
+            "node": "Response",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Response": {
+      "main": [
+        []
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1"
+  }
+}

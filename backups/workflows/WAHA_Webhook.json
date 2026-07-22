@@ -1,0 +1,120 @@
+{
+  "id": "8SXdF8J3lkwJOJXH",
+  "name": "WAHA Webhook",
+  "active": true,
+  "nodes": [
+    {
+      "id": "fc89ea892dd94be2bf6041dcc6207ac0",
+      "name": "Webhook WAHA",
+      "typeVersion": 1,
+      "type": "n8n-nodes-base.webhook",
+      "position": [
+        250,
+        300
+      ],
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "waha",
+        "responseMode": "lastNode",
+        "options": {}
+      },
+      "webhookId": "8907e964-d88f-47eb-9aeb-d55a91dbcd4e"
+    },
+    {
+      "id": "f00322d6cecd4522a5f49105dd24ae82",
+      "name": "Encaminhar CRM Chat",
+      "typeVersion": 4.2,
+      "type": "n8n-nodes-base.httpRequest",
+      "position": [
+        450,
+        300
+      ],
+      "parameters": {
+        "method": "POST",
+        "url": "http://localhost:5678/webhook/crm-chat",
+        "authentication": "none",
+        "sendBody": true,
+        "bodyContentType": "json",
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "message",
+              "value": "={{ $json.body.message || $json.body.text || $json.body.caption || JSON.stringify($json.body) }}",
+              "type": "string"
+            },
+            {
+              "name": "user_id",
+              "value": "={{ $json.body.from || \"waha\" }}",
+              "type": "string"
+            },
+            {
+              "name": "source",
+              "value": "whatsapp",
+              "type": "string"
+            },
+            {
+              "name": "_file_type",
+              "value": "text",
+              "type": "string"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "70a9ebca370e4d069f12ba76fc957967",
+      "name": "Response",
+      "typeVersion": 1,
+      "type": "n8n-nodes-base.respondToWebhook",
+      "position": [
+        650,
+        300
+      ],
+      "parameters": {
+        "respondWith": "json",
+        "options": {},
+        "responseBodyType": "firstItemJson",
+        "responseData_simple": [
+          {
+            "id": "1",
+            "name": "status",
+            "value": "received",
+            "type": "string"
+          }
+        ]
+      }
+    }
+  ],
+  "connections": {
+    "Webhook WAHA": {
+      "main": [
+        [
+          {
+            "node": "Encaminhar CRM Chat",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Encaminhar CRM Chat": {
+      "main": [
+        [
+          {
+            "node": "Response",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Response": {
+      "main": [
+        []
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1"
+  }
+}

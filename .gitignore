@@ -24,3 +24,7 @@ backup_test_*.json
 # OS
 Thumbs.db
 .DS_Store
+
+# WAHA session data
+waha/sessions/
+waha/media/

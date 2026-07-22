@@ -1,55 +1,42 @@
-# TODO NEXT — Próximas Tarefas (Priorizadas)
+# KLAWS CRM — Próximas Tarefas (Priorizadas)
 
-## 🔴 Alta Prioridade (Funcionamento Básico)
+## 🔴 Sprint 2 — Conciliação Bancária
 
-### 1. Aplicar Migration SQL no Supabase
-- **O quê:** Executar `00003_add_comprovantes_agentes_config.sql` no SQL Editor do Supabase
-- **Por quê:** Sem isso, as tabelas `message_buffer`, `agentes_config` e `comprovantes` não existem
-- **Como:** Acessar https://supabase.com → SQL Editor → colar o conteúdo do arquivo
+### 1. Autenticar WAHA Session
+- **O quê:** Escanear QR code via WAHA Dashboard para ativar recebimento de mensagens WhatsApp
+- **Como:** Acessar http://localhost:3000/dashboard (credenciais: LimaSL / 147258369) → Sessions → webjs → QR Code
+- **Risco:** Sem isso, WhatsApp não envia mensagens para o n8n
 
-### 2. Configurar Google Drive OAuth no n8n
-- **O quê:** Registrar redirect URI `http://127.0.0.1:5678/rest/oauth2-credential/callback` no Google Cloud Console
-- **Por quê:** AI Agent não consegue criar/verificar/deletar eventos no Google Calendar
-- **Passos:** Descritos em SESSÃO_ESTADO.md seção A
+### 2. Configurar Google Calendar OAuth
+- **O quê:** Registrar redirect URI e configurar OAuth no Google Cloud Console
+- **Por quê:** AI Agent precisa criar/verificar eventos
+- **Impacto:** Bloqueia agenda automatizada
 
-### 3. Criar Agente Comprovante (OCR) Workflow
-- **O quê:** Workflow n8n separado com webhook `/webhook/agent-comprovante`
-- **Nós:** Webhook → OCR.space → Parse → IF confidence → Response
-- **Por quê:** É o primeiro agente necessário para processar PDFs/imagens de comprovantes
+### 3. Criar Agente Conciliação
+- **O quê:** Workflow n8n para processar CTN + Extrato bancário
+- **Nós esperados:** Webhook → Parse CSV/XLS → Buscar Comprovantes → Matcher → Divergências → Response
+- **Dependência:** Migration 003 aplicada (tabela comprovantes existe)
 
-### 4. Criar Agente Conciliação (CTN+Extrato) Workflow
-- **O quê:** Workflow n8n separado com webhook `/webhook/agent-conciliacao`
-- **Nós:** Webhook → Parse CSV/XLS → Buscar Comprovantes → Matcher → Response
-- **Por quê:** Segundo agente necessário para conciliação bancária
+## 🟡 Melhorias de Robustez
 
-## 🟡 Média Prioridade (Robustez)
+### 4. Mover Secrets para Docker Secrets
+- **O quê:** Remover N8N_ENCRYPTION_KEY, WAHA_API_KEY, WAHA_DASHBOARD_PASSWORD do docker-compose.yml
+- **Alternativa:** Usar .env não versionado
+- **Risco:** 🔴 Crítico — chaves expostas no repositório
 
-### 5. Reimplementar Router no Workflow Mestre
-- **O quê:** Adicionar Switch de tipo de arquivo entre Salvar no Buffer e DADOS
-- **Fluxo:** Texto → AI Agent atual | Imagem/PDF → POST /webhook/agent-comprovante | Planilha → POST /webhook/agent-conciliacao
-- **Por quê:** Roteamento automático baseado no tipo de arquivo enviado
+### 5. Adicionar Healthchecks nos Containers
+- **O quê:** Healthcheck para n8n, ocr-service, waha, crm
+- **Por quê:** Monitoramento básico sem ferramenta externa
 
-### 6. Automatizar Toggle Webhook no Startup do Container
-- **O quê:** Modificar entrypoint do n8n ou criar script de healthcheck que executa toggle
-- **Por quê:** Eliminar dependência de execução manual pós-restart
-- **Sugestão:** Docker Compose healthcheck com curl + API call, ou script de init no volume
+### 6. Remover Scripts de Debug da Raiz
+- **O quê:** Mover scripts sprint*.js para pasta própria
+- **Por quê:** Poluição visual na raiz do projeto
 
-### 7. Remover Credenciais Hardcoded
-- **Arquivos:** `toggle_webhook.js`, debug scripts
-- **O quê:** Mover n8n API Key para env var; mover Supabase Service Key para secrets do Docker
-- **Por quê:** Segurança — risco de exposição em versionamento
+## 🟢 Qualidade
 
-## 🟢 Baixa Prioridade (Qualidade)
-
-### 8. Limpar Scripts de Debug da Raiz
-- **O quê:** Remover ~40+ scripts `.js` avulsos usados para debugging
-- **Por quê:** Poluição visual. Manter apenas `toggle_webhook.js`, remover o resto após estabilização
-
-### 9. Adicionar Testes E2E para Fluxo de Chat
+### 7. Testes E2E para Fluxo de Chat
 - **O quê:** Playwright tests para envio de mensagem, upload de arquivos, resposta do bot
-- **Arquivo:** `crm/tests/chat.spec.ts`
-- **Por quê:** Detecção precoce de regressão
 
-### 10. Refatorar chat-interface-v2.tsx
+### 8. Refatorar chat-interface-v2.tsx
 - **O quê:** Extrair hooks `useChat` e `useFileUpload`
-- **Por quê:** Componente tem 374 linhas com lógica misturada (374 linhas → ~150 com hooks)
+- **Por quê:** Componente com 374 linhas mistura lógica e UI

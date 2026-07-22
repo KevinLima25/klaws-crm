@@ -1,0 +1,661 @@
+{
+  "id": "WFCRM001chat01",
+  "name": "CRM Chat (Simplified Webhook)",
+  "active": true,
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "crm-chat",
+        "responseMode": "lastNode",
+        "options": {}
+      },
+      "id": "d79cfdeb-e0f9-4569-a3c8-f3ae0da809ba",
+      "name": "CRM Webhook v2",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [
+        0,
+        304
+      ],
+      "webhookId": "wh_crm_1784660989708"
+    },
+    {
+      "parameters": {
+        "jsCode": "const supabaseUrl = 'https://wbmljquydsatacqerlzv.supabase.co';\nconst supabaseKey = 'SUPABASE_SERVICE_ROLE_KEY_EXPORTED';\nconst body = $json.body || $json;\nconst user_id = body.user_id;\nconst message = body.message || '';\nlet file_name = body._file_name || body.file_name || null;\nlet file_type = body._file_type || body.file_type || null;\nif (!file_name) {\n  const binKeys = Object.keys($binary || {});\n  if (binKeys.length > 0) {\n    const bin = $binary[binKeys[0]];\n    if (bin && bin.fileName) file_name = bin.fileName;\n    if (bin && bin.mimeType) file_type = bin.mimeType;\n  }\n}\nconst payload = { user_id, message, file_name, file_type, processed: false };\ntry {\n  await this.helpers.httpRequest({\n    method: 'POST',\n    url: supabaseUrl + '/rest/v1/message_buffer',\n    headers: {\n      'Content-Type': 'application/json',\n      'apikey': supabaseKey,\n      'Authorization': 'Bearer ' + supabaseKey\n    },\n    body: payload\n  });\n} catch (e) {\n  console.error('Failed to save to buffer:', e.message);\n}\nreturn $input.all();"
+      },
+      "id": "salvar_no_buffer_1784660644181",
+      "name": "Salvar no Buffer",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 1,
+      "position": [
+        224,
+        304
+      ]
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "95ed5205-4d9f-42f3-abb6-b2313fed0de5",
+              "name": "ID",
+              "value": "={{ $json.body.user_id }}",
+              "type": "string"
+            },
+            {
+              "id": "b1451a80-3e11-49fb-9725-061de4800c71",
+              "name": "NAME",
+              "value": "={{ $json.body.user_id }}",
+              "type": "string"
+            },
+            {
+              "id": "67f70ec2-c381-465b-81fd-a5171911b9e5",
+              "name": "MESSAGE",
+              "value": "={{ $json.body.message }}",
+              "type": "string"
+            },
+            {
+              "id": "b7dc0d2e-c190-4b95-88c5-b0379fd74ecd",
+              "name": "DATE",
+              "value": "={{ $now.setZone('America/Sao_Paulo').format('dd-MM-yyyy HH:mm') }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "338624c9-719c-4ab2-876b-62f1c7a855fd",
+      "name": "DADOS",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        448,
+        304
+      ]
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=## Dados para atendimento\nNome do Cliente:{{ $json.NAME }}\nData e hora atual: {{ $json.DATE }}\nMensagem para responder:\n{{ $json.MESSAGE }}",
+        "options": {
+          "systemMessage": "Prompt do Agente de Agendamento CDT Campinas Sul\nFunção\nVocê é um assistente especializado exclusivamente no agendamento de atendimentos do setor de Cancelamento da CDT.\n\nSua única responsabilidade é consultar, criar e cancelar agendamentos utilizando as ferramentas disponíveis. Você está atendendo diretamente um funcionário do Cartão de Todos.\n\nVocê não responde dúvidas sobre contratos, pagamentos, produtos, reclamações ou qualquer outro assunto. Caso o usuário solicite algo fora do escopo de agendamento, informe educadamente que você atua apenas no gerenciamento de agendamentos.\n\nColeta Obrigatória de Informações\nAntes de efetivar qualquer agendamento, você deve garantir que possui todas as informações necessárias. Caso o usuário não tenha informado anteriormente na conversa, você deve perguntar e coletar educadamente:\n\nNome do cliente\nMatrícula\nData e horário desejados para o agendamento\nSe o usuário solicitar um agendamento sem informar algum desses dados, solicite o dado em falta antes de consultar ou criar o agendamento.\n\nFerramentas disponíveis\nVocê possui três ferramentas:\n\nConsultar Agenda Utilize esta ferramenta obrigatoriamente antes de qualquer novo agendamento. Objetivo:\nconsultar os eventos existentes;\nverificar disponibilidade do horário solicitado;\nidentificar quantidade de agendamentos existentes no dia.\nNunca crie um agendamento sem utilizar esta ferramenta primeiro.\n\nCriar Agendamento Utilize somente após confirmar que:\no horário está livre;\nainda existe capacidade de atendimento no dia;\ntodas as regras deste prompt foram respeitadas.\nCancelar Agendamento Utilize quando o usuário solicitar o cancelamento de um agendamento existente. Caso existam múltiplos agendamentos do usuário, solicite confirmação antes de excluir.\nRegras obrigatórias\nHorário de funcionamento\nOs atendimentos acontecem somente:\n\ninício: 08:00\ntérmino: 17:30\nNão agende fora desse intervalo.\n\nHorário de almoço\nNão são permitidos agendamentos entre:\n\n11:30 até 13:45\nPortanto, os horários abaixo não podem existir:\n\n11:30\n12:00\n12:30\n13:00\n13:30\nO primeiro horário disponível após o almoço é:\n\n14:00\nIntervalo entre atendimentos\nOs horários devem ocorrer apenas de 30 em 30 minutos. Exemplos válidos:\n\n08:00\n08:30\n09:00\n09:30\n...\n17:00\n17:30\nNunca utilize intervalos diferentes.\n\nLimite diário\nCada dia poderá conter no máximo 10 agendamentos. Antes de criar um novo evento, conte quantos já existem naquele dia. Se já existirem 10:\n\nnão crie o evento;\ninforme que o limite diário foi atingido;\nofereça o próximo dia disponível.\nConflito de horários\nÉ proibido existir dois atendimentos no mesmo horário. Antes de criar qualquer evento:\n\nconsulte a agenda;\nverifique se o horário solicitado está ocupado.\nSe estiver ocupado:\n\nnão crie o evento;\ninforme que o horário já está reservado;\nofereça os horários livres mais próximos.\nFluxo obrigatório\nSempre siga exatamente esta sequência:\n\nNovo agendamento\nSolicitar as informações obrigatórias (Nome do cliente e Matrícula) caso o usuário ainda não as tenha fornecido.\nReceber a data e o horário desejados.\nConsultar a agenda utilizando a ferramenta de consulta.\nVerificar se o horário solicitado está de acordo com as regras de funcionamento, almoço, conflito de horários e limite diário.\nCaso todas as verificações sejam aprovadas, criar o agendamento utilizando a ferramenta apropriada.\nConfirmar o sucesso do agendamento ao usuário.\nNunca pule a etapa de consulta.\n\nCancelamento\nLocalizar o agendamento.\nConfirmar com o usuário, caso necessário.\nExecutar a ferramenta de exclusão.\nConfirmar o cancelamento.\nTratamento de solicitações\nSe o usuário solicitar um horário indisponível:\n\nexplique o motivo;\napresente alternativas disponíveis no mesmo dia;\ncaso não existam horários, ofereça o próximo dia útil disponível.\nNunca invente horários livres sem consultar a agenda.\n\nComportamento\nVocê deve:\n\nser objetivo;\nresponder em português brasileiro;\nutilizar linguagem cordial;\nnunca informar detalhes técnicos das ferramentas;\nnunca dizer que é uma IA;\nnunca assumir disponibilidade sem consultar a agenda.\nnunca utilizar os caracteres asterisco duplo para negrito em sua resposta para que não ocorram erros de formatação de markdown.\nPrioridade das regras\nSempre respeite esta ordem:\n\nSolicitar Nome do cliente e Matrícula caso ausentes.\nConsultar agenda.\nHorário de funcionamento.\nIntervalo de almoço.\nIntervalo de 30 minutos.\nLimite de 10 agendamentos.\nAusência de conflito.\nCriar o agendamento.\nCaso qualquer regra seja violada, o agendamento não deve ser realizado.\n\nAntes de utilizar a ferramenta de criação de agendamento, você deve obrigatoriamente utilizar a ferramenta de consulta da agenda. É proibido criar um evento sem consultar a agenda imediatamente antes. Caso a consulta retorne conflito de horário, horário fora do expediente, período de almoço ou limite diário de 10 agendamentos atingido, interrompa o processo de criação e não execute a ferramenta de agendamento. Nesses casos, consulte a agenda do próximo dia útil e sugira ao usuário exatamente 3 horários disponíveis, respeitando todas as regras de funcionamento (08:00 às 11:30 e 14:00 às 17:30, intervalos de 30 minutos e limite máximo de 10 agendamentos por dia). Somente após o usuário escolher uma das opções sugeridas, realize uma nova consulta para confirmar que o horário continua disponível e, então, execute a ferramenta de criação. Nunca assuma disponibilidade com base em memória ou em mensagens anteriores. Nunca utilize negritos ou asteriscos na sua resposta final."
+        }
+      },
+      "id": "e10b5b3e-df56-4cfe-8a3c-16f1fa5eff8f",
+      "name": "AI Agent",
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 3.1,
+      "position": [
+        672,
+        304
+      ]
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "id": "bf675fb3-fa26-422b-b6dd-257e8d7979d3",
+      "name": "Google Gemini Chat Model",
+      "type": "@n8n/n8n-nodes-langchain.lmChatGoogleGemini",
+      "typeVersion": 1.1,
+      "position": [
+        560,
+        512
+      ],
+      "credentials": {
+        "googlePalmApi": {
+          "id": "SHCrSearl3r2JwZp",
+          "name": "Google Gemini(PaLM) Api account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "sessionIdType": "customKey",
+        "sessionKey": "={{ $json.ID }}",
+        "contextWindowLength": 20
+      },
+      "id": "2b14f783-b87a-4dd4-a21b-e5a9b90911aa",
+      "name": "Simple Memory",
+      "type": "@n8n/n8n-nodes-langchain.memoryBufferWindow",
+      "typeVersion": 1.4,
+      "position": [
+        560,
+        112
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "getAll",
+        "calendar": {
+          "__rl": true,
+          "value": "bcf86a98555aca85102397efdec3a8ee706c125c80979ddaab384b6488847029@group.calendar.google.com",
+          "mode": "list",
+          "cachedResultName": "N8N CDT"
+        },
+        "timeMin": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('After', ``, 'string') }}",
+        "timeMax": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('Before', ``, 'string') }}",
+        "options": {}
+      },
+      "id": "44f1ab7e-fddd-48ba-9706-449c9e374985",
+      "name": "VERIFICAR AGENDA",
+      "type": "n8n-nodes-base.googleCalendarTool",
+      "typeVersion": 1.3,
+      "position": [
+        1056,
+        496
+      ],
+      "credentials": {
+        "googleCalendarOAuth2Api": {
+          "id": "2oseAt8crzIC3A6h",
+          "name": "Google Calendar account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "calendar": {
+          "__rl": true,
+          "value": "bcf86a98555aca85102397efdec3a8ee706c125c80979ddaab384b6488847029@group.calendar.google.com",
+          "mode": "list",
+          "cachedResultName": "N8N CDT"
+        },
+        "start": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('Start', `data e hora inicial no formato datetime tz -03:00`, 'string') }}",
+        "end": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('End', `data e hora final no formato datetime tz -03:00`, 'string') }}",
+        "additionalFields": {
+          "description": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('Description', ``, 'string') }}"
+        }
+      },
+      "id": "46f91671-5d8f-4741-b9ae-5a85c0b61af7",
+      "name": "Criar Evento",
+      "type": "n8n-nodes-base.googleCalendarTool",
+      "typeVersion": 1.3,
+      "position": [
+        912,
+        624
+      ],
+      "credentials": {
+        "googleCalendarOAuth2Api": {
+          "id": "2oseAt8crzIC3A6h",
+          "name": "Google Calendar account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "delete",
+        "calendar": {
+          "__rl": true,
+          "value": "bcf86a98555aca85102397efdec3a8ee706c125c80979ddaab384b6488847029@group.calendar.google.com",
+          "mode": "list",
+          "cachedResultName": "N8N CDT"
+        },
+        "eventId": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('Event_ID', ``, 'string') }}",
+        "options": {}
+      },
+      "id": "374a27a1-5fbb-4325-ab06-53b4db15ae1c",
+      "name": "Delete an event in Google Calendar",
+      "type": "n8n-nodes-base.googleCalendarTool",
+      "typeVersion": 1.3,
+      "position": [
+        784,
+        592
+      ],
+      "credentials": {
+        "googleCalendarOAuth2Api": {
+          "id": "2oseAt8crzIC3A6h",
+          "name": "Google Calendar account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "40e47bd6-8ec5-473e-b985-6d01f0ec2ce8",
+              "name": "text",
+              "value": "={{ $json.output }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "2460b87d-63fd-4bd6-8065-0eb0cfce6757",
+      "name": "Format Response",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        1040,
+        288
+      ]
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "6d98065b-e947-4ed2-bb78-aba62449963c",
+              "name": "text",
+              "value": "Recebi sua imagem. O processamento de OCR será implementado em breve.",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "ocr_img_1784721154042",
+      "name": "OCR_PENDING (Imagem)",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        912,
+        -256
+      ]
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "354cbeee-135f-44ba-ba9b-7e57630391ad",
+              "name": "text",
+              "value": "Recebi seu PDF. O processamento de OCR será implementado em breve.",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "ocr_pdf_1784721154042",
+      "name": "OCR_PENDING (PDF)",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        912,
+        -48
+      ]
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "a3a51539-a194-47e5-9511-a662f08ddc8b",
+              "name": "text",
+              "value": "Recebi seu áudio. O processamento será implementado em breve.",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "audio_1784721154042",
+      "name": "AUDIO_PENDING",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        912,
+        192
+      ]
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "5ba99cae-3b22-48b3-b16e-596d40a7acf1",
+              "name": "text",
+              "value": "Recebi seu vídeo. O processamento será implementado em breve.",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "video_1784721154042",
+      "name": "VIDEO_PENDING",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        912,
+        400
+      ]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "string": [
+            {
+              "value1": "={{ $json.body._file_type || $json.body.file_type || \"text\" }}",
+              "value2": "image"
+            }
+          ]
+        }
+      },
+      "id": "774447e743d543b3a6b9054c5e55d30d",
+      "name": "Router: Imagem?",
+      "typeVersion": 1,
+      "type": "n8n-nodes-base.if",
+      "position": [
+        656,
+        304
+      ]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "string": [
+            {
+              "value1": "={{ $json.body._file_type || $json.body.file_type || \"text\" }}",
+              "value2": "pdf"
+            }
+          ]
+        }
+      },
+      "id": "9df9dff13bef4fe19924c675787b6060",
+      "name": "Router: PDF?",
+      "typeVersion": 1,
+      "type": "n8n-nodes-base.if",
+      "position": [
+        848,
+        304
+      ]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "string": [
+            {
+              "value1": "={{ $json.body._file_type || $json.body.file_type || \"text\" }}",
+              "value2": "audio"
+            }
+          ]
+        }
+      },
+      "id": "52e4f15635cc40ad9a9cc292c6b87865",
+      "name": "Router: Audio?",
+      "typeVersion": 1,
+      "type": "n8n-nodes-base.if",
+      "position": [
+        1360,
+        224
+      ]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "string": [
+            {
+              "value1": "={{ $json.body._file_type || $json.body.file_type || \"text\" }}",
+              "value2": "video"
+            }
+          ]
+        }
+      },
+      "id": "787ba1f8af2a46cf871e050661552d8b",
+      "name": "Router: Video?",
+      "typeVersion": 1,
+      "type": "n8n-nodes-base.if",
+      "position": [
+        1408,
+        400
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "const items = $input.all();\nif (!items || items.length === 0) return [];\nconst item = items[0];\nlet file_name = '';\nlet file_type = '';\nconst binKeys = Object.keys($binary || {});\nif (binKeys.length > 0) {\n  const bin = $binary[binKeys[0]];\n  if (bin) { file_name = bin.fileName || ''; file_type = bin.mimeType || ''; }\n}\nconst body = item.json.body || item.json || {};\nif (!file_name) file_name = body._file_name || body.file_name || '';\nif (!file_type) file_type = body._file_type || body.file_type || '';\nfile_name = file_name.toLowerCase();\nfile_type = file_type.toLowerCase();\nconst ext = file_name ? file_name.split('.').pop() : '';\nconst tiposPermitidos = ['image/jpeg', 'image/png', 'image/jpg', 'application/pdf'];\nconst extensoesPermitidas = ['jpg', 'jpeg', 'png', 'pdf'];\nconst isTipoValido = tiposPermitidos.includes(file_type);\nconst isExtValida = extensoesPermitidas.includes(ext);\nconst keywords = [\n  'comprovante', 'comprovant', 'comprov',\n  'boleto', 'bolet',\n  'pagamento', 'pagto',\n  'deposito', 'depósito', 'dep',\n  'extrato',\n  'recibo',\n  'pix',\n  'transferencia', 'transferência', 'transf',\n  'holerite',\n  'rendimento',\n  'notafiscal', 'nf',\n  'fatura',\n  'mensalidade',\n  'contribuicao', 'contribuição'\n];\nlet eh_comprovante = false;\nif (isTipoValido || isExtValida) {\n  if (file_name) {\n    const nomeSemExt = file_name.replace('.' + ext, '').replace(/[^a-z0-9]/g, '');\n    eh_comprovante = keywords.some(function(kw) { return nomeSemExt.includes(kw); });\n  }\n}\nreturn [{\n  json: Object.assign({}, item.json, { eh_comprovante: eh_comprovante, file_name: file_name, file_type: file_type }),\n  binary: item.binary\n}];"
+      },
+      "id": "3d7b9a1a0d0749cba84e6b65e4c31808",
+      "name": "Detectar Comprovante",
+      "typeVersion": 1,
+      "type": "n8n-nodes-base.code",
+      "position": [
+        432,
+        304
+      ]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "boolean": [
+            {
+              "value1": "={{ $json.eh_comprovante }}",
+              "value2": true
+            }
+          ]
+        }
+      },
+      "id": "e6d82fe4b5144b2aa48b679f2ea158b4",
+      "name": "Router: Comprovante?",
+      "typeVersion": 1,
+      "type": "n8n-nodes-base.if",
+      "position": [
+        656,
+        304
+      ]
+    },
+    {
+      "id": "46f37312db29420eb8b2ef9bf0341250",
+      "name": "Enviar para Agente Comprovante",
+      "typeVersion": 1,
+      "type": "n8n-nodes-base.code",
+      "position": [
+        864,
+        208
+      ],
+      "parameters": {
+        "jsCode": "const items = $input.all();\nif (!items || items.length === 0) return [];\nconst item = items[0];\nconst body = item.json.body || item.json || {};\nconst user_id = body.user_id || \"\";\nconst message = body.message || \"\";\nlet file_name = \"\";\nlet file_type = \"\";\nlet file_base64 = \"\";\nconst binKeys = Object.keys($binary || {});\nif (binKeys.length > 0) {\n  const binKey = binKeys[0];\n  const bin = $binary[binKey];\n  if (bin) {\n    file_name = bin.fileName || body.file_name || body._file_name || \"\";\n    file_type = bin.mimeType || body.file_type || body._file_type || \"\";\n    // Method signature: getBinaryDataBuffer(itemIndex, propertyName|binaryData)\n    var buf = null;\n    try { buf = await this.helpers.getBinaryDataBuffer(0, bin); } catch(e) {}\n    if (!buf) { try { buf = await this.helpers.getBinaryDataBuffer(0, binKey); } catch(e) {} }\n    if (buf) { file_base64 = buf.toString(\"base64\"); }\n    if (!file_base64 && bin.data) {\n      var buf2 = Buffer.isBuffer(bin.data) ? bin.data : Buffer.from(bin.data, \"base64\");\n      file_base64 = buf2.toString(\"base64\");\n    }\n  }\n}\nif (!file_base64 && item && item.binary) {\n  const ibk = Object.keys(item.binary);\n  if (ibk.length > 0) {\n    const ibKey = ibk[0];\n    const ib = item.binary[ibKey];\n    if (ib) {\n      file_name = file_name || ib.fileName || \"\";\n      file_type = file_type || ib.mimeType || \"\";\n      var buf3 = null;\n      try { buf3 = await this.helpers.getBinaryDataBuffer(0, ib); } catch(e) {}\n      if (!buf3) { try { buf3 = await this.helpers.getBinaryDataBuffer(0, ibKey); } catch(e) {} }\n      if (buf3) { file_base64 = buf3.toString(\"base64\"); }\n      if (!file_base64 && ib.data) {\n        var buf4 = Buffer.isBuffer(ib.data) ? ib.data : Buffer.from(ib.data, \"base64\");\n        file_base64 = buf4.toString(\"base64\");\n      }\n    }\n  }\n}\nif (!file_base64) {\n  return [{ json: { status: \"erro\", erro: \"Nenhum binario encontrado\" } }];\n}\nconst payload = { user_id: user_id, message: message, file_base64: file_base64, file_name: file_name, file_type: file_type };\ntry {\n  const resp = await this.helpers.httpRequest({\n    method: \"POST\",\n    url: \"http://localhost:5678/webhook/comprovante\",\n    headers: { \"Content-Type\": \"application/json\" },\n    body: payload,\n    timeout: 30000\n  });\n  return [{ json: { status: \"success\", resposta: resp } }];\n} catch (e) {\n  return [{ json: { status: \"erro\", erro: e.message || String(e) } }];\n}"
+      }
+    }
+  ],
+  "connections": {
+    "CRM Webhook v2": {
+      "main": [
+        [
+          {
+            "node": "Salvar no Buffer",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "DADOS": {
+      "main": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "AI Agent": {
+      "main": [
+        [
+          {
+            "node": "Format Response",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Simple Memory": {
+      "ai_memory": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_memory",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Google Gemini Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "VERIFICAR AGENDA": {
+      "ai_tool": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Criar Evento": {
+      "ai_tool": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Delete an event in Google Calendar": {
+      "ai_tool": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Salvar no Buffer": {
+      "main": [
+        [
+          {
+            "node": "Detectar Comprovante",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Router: Imagem?": {
+      "main": [
+        [
+          {
+            "node": "OCR_PENDING (Imagem)",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Router: PDF?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Router: PDF?": {
+      "main": [
+        [
+          {
+            "node": "OCR_PENDING (PDF)",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Router: Audio?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Router: Audio?": {
+      "main": [
+        [
+          {
+            "node": "AUDIO_PENDING",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Router: Video?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Router: Video?": {
+      "main": [
+        [
+          {
+            "node": "VIDEO_PENDING",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "DADOS",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Detectar Comprovante": {
+      "main": [
+        [
+          {
+            "node": "Router: Comprovante?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Router: Comprovante?": {
+      "main": [
+        [
+          {
+            "node": "Enviar para Agente Comprovante",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Router: Imagem?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate",
+    "availableInMCP": false
+  }
+}

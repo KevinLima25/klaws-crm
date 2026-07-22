@@ -4,7 +4,10 @@ const fs = require('fs');
 const path = require('path');
 const { execSync } = require('child_process');
 
-const AK = 'N8N_API_KEY_REMOVED';
+const envContent = fs.readFileSync(path.resolve('crm/.env.local'), 'utf-8');
+const N8N_API_KEY = (envContent.match(/^N8N_API_KEY=(.+)$/m) || [])[1];
+if (!N8N_API_KEY) throw new Error('N8N_API_KEY nao encontrada em crm/.env.local. Gere uma em n8n Settings > API.');
+const AK = N8N_API_KEY;
 function nid() { return crypto.randomUUID().replace(/-/g, '').substring(0, 32); }
 function api(method, p, body) {
   return new Promise(resolve => {

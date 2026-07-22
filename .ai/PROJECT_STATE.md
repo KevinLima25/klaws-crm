@@ -1,10 +1,10 @@
 # KLAWS CRM — PROJECT STATE
 
 **Data:** 2026-07-22
-**Versão:** 1.3
-**Sprint Atual:** Sprint 1.8 — OCR LOCAL (Tesseract via microservice HTTP)
+**Versão:** 1.4
+**Sprint Atual:** Sprint 1.9 — Estabilização da Plataforma
 **Release:** v0.1.0-alpha
-**Commit:** `152d457` (chore: prepare repository for v0.1.0-alpha)
+**Commit:** `a0a3f7c` (Sprint 1.9 - estabilizacao)
 **Branch:** `master`
 
 ---
@@ -13,12 +13,12 @@
 
 | Métrica | Valor |
 |---|---|
-| **Health Score** | 55/100 |
-| **Maturidade (0-10)** | 5.5 / 10 |
+| **Health Score** | 60/100 |
+| **Maturidade (0-10)** | 6.0 / 10 |
 | **Risco Atual** | 🟠 MÉDIO |
 | **Domínio mais maduro** | Frontend (Next.js + Auth + UI) — 85% |
-| **Domínio mais crítico** | Automações n8n (workflows incompletos, webhook instável) — 40% |
-| **Blockers ativos** | Migration 003 não aplicada, Google Calendar OAuth não configurado |
+| **Domínio mais crítico** | Automações n8n (workflows incompletos) — 45% |
+| **Blockers ativos** | WAHA session não autenticada, Google Calendar OAuth não configurado |
 | **Recomendação** | CONTINUAR — com correções urgentes de segurança e estabilidade |
 
 ---
@@ -54,20 +54,20 @@
 | `/api/sync-funcionarios` | POST | ✅ Funcional | Loop O(n²) com listUsers |
 | `/api/upload-avatar` | POST | ✅ Funcional | Storage avatars |
 
-### Banco (Supabase) — 🟡 55%
+### Banco (Supabase) — 🟡 70%
 
 | Item | Status | Obs |
 |---|---|---|
 | Migrations definidas | ✅ 3/3 | 00001, 00002, 00003 |
-| Migrations aplicadas | ⚠️ 2/3 | **003 pendente — CRÍTICO** |
+| Migrations aplicadas | ✅ **3/3** | **Migration 003 OK** |
 | profiles | ✅ Aplicada | RLS ativo |
 | chat_messages | ✅ Aplicada | RLS ativo |
 | funcionarios | ✅ Aplicada | ❌ Sem RLS |
 | vendas | ✅ Aplicada | ❌ Sem RLS |
 | adimplencia | ✅ Aplicada | ❌ Sem RLS |
-| comprovantes | ❌ Migration 003 não aplicada | RLS configurado na migration |
-| agentes_config | ❌ Migration 003 não aplicada | RLS configurado na migration |
-| message_buffer | ❌ Migration 003 não aplicada | RLS configurado na migration |
+| comprovantes | ✅ **Migration 003 aplicada** | RLS configurado na migration |
+| agentes_config | ✅ **Migration 003 aplicada** | RLS configurado, 21 configs inseridas |
+| message_buffer | ✅ **Migration 003 aplicada** | RLS configurado |
 | Storage/Buckets | ⚠️ Apenas avatars | Criado automaticamente |
 | Funções/Triggers | ✅ handle_new_user | Cria profile ao registrar |
 | Views SQL | ❌ Não implementado | Dashboard usa API Route direto |
@@ -79,20 +79,22 @@
 | CRM Chat (WFCRM001chat01) | ✅ Ativo | 18 nós, Master Router + Detectar Comprovante + Code node (Enviar para Agente Comprovante) |
 | Agente_Comprovante (WFCRM001comp01) | ✅ Ativo | 10 nós: Webhook → Validar → Valido? → TEM BINARIO? → Write Binary File → **EXECUTAR OCR (Tesseract)** → **SALVAR OCR .TXT** → Set Metadados → RESPOSTA SUCESSO / RESPOSTA ERRO |
 | Agente Comprovante/OCR (WFCRM001ocr01) | ❌ **Desativado** | Continha `$env` — runner bloqueia todas variáveis de ambiente |
+| **WAHA Webhook (WgnQElkUjRP7f0J4)** | ✅ **Ativo (novo)** | Recebe WhatsApp e encaminha ao CRM Chat |
 | Agente_Agendamento (UH5kg99biTCqPZ1F) | ❌ Inativo | Telegram trigger, 10 nós |
-| Master Router (IF chain) | ✅ Implementado | 5 IF nodes: Comprovante?, Imagem?, PDF?, Audio?, Video? → fallback DADOS |
 | Agente Conciliação | ❌ Não existe | Workflow não criado |
-| Webhook persistence | ❌ Bug | webhookId=null, some após restart |
-| Backup JSON | ❌ Não existe | Risco de perda total |
+| Webhook persistence | ⚠️ Funciona | webhookId=null mas path-based continua operando |
+| Backup JSON | ✅ **Realizado** | 6 workflows em `backups/workflows/` |
 
-### WAHA (WhatsApp) — 🟠 30%
+### WAHA (WhatsApp) — 🟠 50%
 
 | Item | Status | Obs |
 |---|---|---|
-| Container | ✅ Running | devlikeapro/waha |
-| Sessão webjs | ✅ Conectada | SQLite session |
-| Webhook no n8n (/webhook/waha) | ❌ **Não existe** | WAHA envia eventos mas n8n não recebe |
+| Container | ✅ Running | devlikeapro/waha engine WEBJS 2026.7.1 |
+| Sessão webjs | ✅ **Criada** | Status STARTING — aguardando scan QR code |
+| Webhook no n8n (/webhook/waha) | ✅ **Criado** | Workflow WAHA Webhook ativo — encaminha para CRM Chat |
 | Media directory | ✅ Montado | ./waha/media |
+| Transporte validado | ✅ OK | Webhook n8n recebe e encaminha mensagens |
+| Sessão autenticada | ❌ Pendente | Scan QR code via WAHA Dashboard necessário |
 
 ### Google — 🔴 10%
 
@@ -488,13 +490,65 @@ Microserviço HTTP independente que recebe base64Image, salva em /tmp/, executa 
 
 | Prioridade | Objetivo | Domínio |
 |---|---|---|
-| 🔴 Crítico | Aplicar Migration 003 | Banco |
-| 🔴 Crítico | Exportar backup JSON workflows | n8n |
-| 🟡 Alto | Configurar Google Calendar OAuth redirect | Google |
+| 🔴 Crítico | Autenticar WAHA session (scan QR code) | WAHA |
+| 🔴 Crítico | Configurar Google Calendar OAuth redirect | Google |
 | 🟡 Alto | Remover secrets do docker-compose.yml | Segurança |
-| 🟡 Alto | Corrigir webhookId null (CRM Chat) | n8n |
-| 🟡 Alto | Criar webhook WAHA no n8n | n8n |
+| 🟡 Alto | Criar Agente Conciliação workflow | n8n |
 | 🟡 Alto | Adicionar RLS em tabelas existentes | Banco |
-| 🟢 Médio | Criar Agente Conciliação workflow | n8n |
-| 🟢 Médio | Auto-toggle webhook no startup | n8n |
 | 🟢 Médio | Healthcheck Docker | DevOps |
+| 🟢 Médio | Testes E2E para fluxo chat | Testes |
+
+---
+
+## Sprint 1.9 — Estabilização da Plataforma (2026-07-22)
+
+**Objetivo:** Finalizar a estabilização da versão v0.1.0-alpha para iniciar o Sprint 2 (Conciliação Bancária).
+
+### Migration 003 — Supabase
+
+**Status:** ✅ Já estava aplicada. As 3 tabelas (comprovantes, agentes_config, message_buffer) existem com RLS configurado. Os INSERTs padrão de agentes_config também foram executados (21 configurações de cargo x agente).
+
+### Webhooks n8n
+
+- `webhookId=null` para todos os webhooks — limitação do n8n 2.30.7
+- Webhooks continuam funcionando via path-based registration (webhook_entity table)
+- Testado: CRM Chat, Agente_Comprovante e WAHA Webhook respondem após restart
+
+### WAHA Integration
+
+- Criado workflow `WAHA Webhook` (ID: WgnQElkUjRP7f0J4) com webhook em `/webhook/waha`
+- Pipeline: Webhook WAHA → HTTP Request (Encaminhar CRM Chat) → Response
+- Transporte validado: webhook recebe POST e encaminha para CRM Chat
+- Sessão `webjs` criada via API (status STARTING) — aguardando scan QR code
+- Limitação: Gemini AI rate limiting pode causar falhas no encaminhamento
+
+### Backup dos Workflows
+
+6 workflows exportados para `backups/workflows/`:
+- CRM_Chat__Simplified_Webhook_.json
+- Agente_Comprovante.json
+- Agente_Comprovante__OCR_.json
+- WAHA_Webhook.json
+- Agente_Agendamento.json
+- TEST_SIMPLE.json (workflow de teste)
+
+### Scripts Corrigidos
+
+- Todos os `sprint*.js` lêem `N8N_API_KEY` de `crm/.env.local` via `fs.readFileSync` (sem dotenv)
+- Nenhuma chave hardcoded nos scripts
+- `.env.example` atualizado com `N8N_API_KEY=` (placeholder comentado)
+
+### Arquivos criados
+
+- `backups/workflows/*.json` — backups dos workflows
+- `deploy_waha_final.js` — script de deploy do WAHA webhook
+- `fix_waha_webhook.js` — script de correção do WAHA webhook
+- `create_waha_webhook.js` — script inicial do WAHA webhook
+
+### Arquivos alterados
+
+- `STATUS.md` — atualizado com WAHA, webhook persistence
+- `RISKS.md` — removidos riscos resolvidos, adicionados WAHA/Gemini
+- `TODO_NEXT.md` — atualizado para Sprint 2
+- `README.md` — adicionado WAHA Webhook, roadmap atualizado
+- `.ai/PROJECT_STATE.md` — documentação Sprint 1.9
