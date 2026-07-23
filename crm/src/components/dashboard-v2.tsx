@@ -1,13 +1,13 @@
 "use client"
 
-import { useEffect, useState } from "react"
+import { useCallback, useEffect, useState } from "react"
 import { createClient } from "@/lib/supabase/client"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { LoadingState } from "@/components/loading-state"
 import {
   Trophy, DollarSign, CheckCircle, XCircle, TrendingUp, Medal, Target, Users, Star, User, Percent,
   ArrowUpRight, ShieldCheck, Activity, BarChart3, Calendar, MessageSquare, ScanLine, Smartphone, ArrowRight,
-  Clock, FileText, Zap,
+  Clock, FileText, Zap, Upload, Database, AlertTriangle, RefreshCw, CheckSquare, Settings,
 } from "lucide-react"
 import Link from "next/link"
 
@@ -33,6 +33,38 @@ type Totais = {
   totalHomologados: number
   totalAdimp: number
 }
+
+type RecentImport = {
+  id: string
+  origem: string
+  arquivo_nome: string
+  created_at: string
+  valor: number | null
+  nome: string | null
+}
+
+type RecentComprovante = {
+  id: string
+  nome_pagador: string | null
+  valor: number | null
+  data_hora: string
+  status: string
+}
+
+type RecentConciliacao = {
+  id: string
+  status: string
+  valor_origem: number | null
+  created_at: string
+  regra_aplicada: string
+}
+
+const PERIODS = [
+  { value: "7", label: "7 dias" },
+  { value: "30", label: "30 dias" },
+  { value: "90", label: "90 dias" },
+  { value: "all", label: "Todas" },
+] as const
 
 const gradients = [
   "from-emerald-400 to-teal-500",
@@ -102,22 +134,34 @@ export function DashboardV2() {
   const [userCargo, setUserCargo] = useState("")
   const [loading, setLoading] = useState(true)
   const [activeRanking, setActiveRanking] = useState<"vendas" | "adimplencia">("vendas")
+  const [period, setPeriod] = useState("30")
+  const [conciliationStatusCounts, setConciliationStatusCounts] = useState<Record<string, number>>({})
+  const [conciliationStatusMeta, setConciliationStatusMeta] = useState<Record<string, { label: string; color: string }>>({})
+  const [totalImports, setTotalImports] = useState(0)
+  const [totalComprovantes, setTotalComprovantes] = useState(0)
+  const [recentImports, setRecentImports] = useState<RecentImport[]>([])
+  const [recentComprovantes, setRecentComprovantes] = useState<RecentComprovante[]>([])
+  const [recentConciliacoes, setRecentConciliacoes] = useState<RecentConciliacao[]>([])
+  const [dashboardError, setDashboardError] = useState<string | null>(null)
 
-  useEffect(() => {
+  const loadData = useCallback(async (p: string) => {
     const supabase = createClient()
+    setLoading(true)
+    setDashboardError(null)
 
-    Promise.all([
-      fetch("/api/dashboard").then((r) => {
+    const [dashRes, userRes] = await Promise.all([
+      fetch(`/api/dashboard?period=${p}`).then((r) => {
         if (!r.ok) throw new Error("dashboard " + r.status)
         return r.json()
+      }).catch((err) => {
+        setDashboardError(err.message)
+        return null
       }),
       supabase.auth.getUser().then(async ({ data }) => {
         const u = data.user
         if (!u) return { name: "", cargo: "" }
-
         let name = u.user_metadata?.name || u.email?.split("@")[0] || ""
         let cargo = u.user_metadata?.cargo || ""
-
         const res = await fetch("/api/me?userId=" + u.id)
         if (res.ok) {
           const me = await res.json()
@@ -127,25 +171,37 @@ export function DashboardV2() {
         return { name, cargo }
       }),
     ])
-      .then(([dashboard, userProfile]) => {
-        setVendas(dashboard.vendasRanking || [])
-        setAdimplencia(dashboard.adimplenciaRanking || [])
-        if (dashboard.totais) setTotais(dashboard.totais)
 
-        setUserName(userProfile.name)
-        setUserCargo(userProfile.cargo)
+    if (dashRes) {
+      setVendas(dashRes.vendasRanking || [])
+      setAdimplencia(dashRes.adimplenciaRanking || [])
+      if (dashRes.totais) setTotais(dashRes.totais)
+      setConciliationStatusCounts(dashRes.conciliationStatusCounts || {})
+      setConciliationStatusMeta(dashRes.conciliationStatusMeta || {})
+      setTotalImports(dashRes.totalImports || 0)
+      setTotalComprovantes(dashRes.totalComprovantes || 0)
+      setRecentImports(dashRes.recentImports || [])
+      setRecentComprovantes(dashRes.recentComprovantes || [])
+      setRecentConciliacoes(dashRes.recentConciliacoes || [])
+    }
 
-        if (isCobrancaRole(userProfile.cargo)) {
-          setActiveRanking("adimplencia")
-        } else if (canSeeVendas(userProfile.cargo)) {
-          setActiveRanking("vendas")
-        } else if (canSeeAdimplencia(userProfile.cargo)) {
-          setActiveRanking("adimplencia")
-        }
-      })
-      .catch((err) => console.error("Dashboard error:", err))
-      .finally(() => setLoading(false))
+    setUserName(userRes.name)
+    setUserCargo(userRes.cargo)
+
+    if (isCobrancaRole(userRes.cargo)) {
+      setActiveRanking("adimplencia")
+    } else if (canSeeVendas(userRes.cargo)) {
+      setActiveRanking("vendas")
+    } else if (canSeeAdimplencia(userRes.cargo)) {
+      setActiveRanking("adimplencia")
+    }
+
+    setLoading(false)
   }, [])
+
+  useEffect(() => {
+    loadData(period)
+  }, [period, loadData])
 
   const acessoVendas = canSeeVendas(userCargo)
   const acessoAdimp = canSeeAdimplencia(userCargo)
@@ -229,6 +285,141 @@ export function DashboardV2() {
           </div>
         </div>
       </div>
+
+      {/* Period Filter */}
+      <div className="flex flex-wrap items-center gap-2">
+        {PERIODS.map((p) => (
+          <button
+            key={p.value}
+            onClick={() => setPeriod(p.value)}
+            className={`px-3.5 py-2 text-xs font-semibold rounded-xl border transition-all touch-manipulation ${
+              period === p.value
+                ? "bg-indigo-600/20 text-indigo-300 border-indigo-500/40 shadow-sm"
+                : "bg-[#1f2136] text-slate-400 border-[#2a2d45] hover:text-white hover:border-slate-500"
+            }`}
+          >
+            {p.label}
+          </button>
+        ))}
+      </div>
+
+      {dashboardError && (
+        <div className="flex items-center gap-3 bg-rose-500/10 border border-rose-500/30 rounded-xl p-4">
+          <AlertTriangle className="h-5 w-5 text-rose-400 shrink-0" />
+          <p className="text-sm text-rose-300 flex-1">{dashboardError}</p>
+          <button onClick={() => loadData(period)} className="text-xs font-semibold text-rose-300 hover:text-white hover:bg-rose-500/20 px-3 py-1.5 rounded-lg border border-rose-500/30 transition-all">
+            <RefreshCw className="h-3.5 w-3.5 inline mr-1" />Reconectar
+          </button>
+        </div>
+      )}
+
+      {/* Operational Overview */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        <div className="bg-[#1a1c30] rounded-xl border border-[#1e2030] p-5">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-xs font-semibold text-slate-400 uppercase tracking-wider">Importações</p>
+              <p className="text-3xl font-bold text-white mt-1.5">{totalImports}</p>
+            </div>
+            <div className="h-11 w-11 rounded-xl bg-indigo-500/10 text-indigo-400 flex items-center justify-center">
+              <Upload className="h-5 w-5" />
+            </div>
+          </div>
+          <div className="mt-3 flex items-center gap-1.5 text-xs text-slate-400">
+            <Database className="h-3.5 w-3.5" />
+            <span>{recentImports.length > 0 ? `${recentImports.length} importações recentes` : "Nenhuma importação"}</span>
+          </div>
+        </div>
+
+        <div className="bg-[#1a1c30] rounded-xl border border-[#1e2030] p-5">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-xs font-semibold text-slate-400 uppercase tracking-wider">Comprovantes</p>
+              <p className="text-3xl font-bold text-white mt-1.5">{totalComprovantes}</p>
+            </div>
+            <div className="h-11 w-11 rounded-xl bg-emerald-500/10 text-emerald-400 flex items-center justify-center">
+              <ScanLine className="h-5 w-5" />
+            </div>
+          </div>
+          <div className="mt-3 flex items-center gap-1.5 text-xs text-slate-400">
+            <CheckCircle className="h-3.5 w-3.5" />
+            <span>{recentComprovantes.length > 0 ? `${recentComprovantes.length} comprovantes recentes` : "Nenhum comprovante"}</span>
+          </div>
+        </div>
+
+        <div className="bg-[#1a1c30] rounded-xl border border-[#1e2030] p-5">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-xs font-semibold text-slate-400 uppercase tracking-wider">Conciliações</p>
+              <p className="text-3xl font-bold text-white mt-1.5">
+                {Object.values(conciliationStatusCounts).reduce((a, b) => a + b, 0)}
+              </p>
+            </div>
+            <div className="h-11 w-11 rounded-xl bg-amber-500/10 text-amber-400 flex items-center justify-center">
+              <Activity className="h-5 w-5" />
+            </div>
+          </div>
+          <div className="mt-3 flex items-center gap-1.5 text-xs text-slate-400">
+            <ShieldCheck className="h-3.5 w-3.5" />
+            <span>Total de registros processados</span>
+          </div>
+        </div>
+
+        <div className="bg-[#1a1c30] rounded-xl border border-[#1e2030] p-5">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-xs font-semibold text-slate-400 uppercase tracking-wider">Pendências</p>
+              <p className="text-3xl font-bold text-rose-400 mt-1.5">{conciliationStatusCounts["PENDENTE_SEM_CORRESPONDENCIA"] || 0}</p>
+            </div>
+            <div className="h-11 w-11 rounded-xl bg-rose-500/10 text-rose-400 flex items-center justify-center">
+              <AlertTriangle className="h-5 w-5" />
+            </div>
+          </div>
+          <div className="mt-3 flex items-center gap-1.5 text-xs text-slate-400">
+            <span>Registros sem correspondência</span>
+          </div>
+        </div>
+      </div>
+
+      {/* Conciliation Status Summary */}
+      {Object.keys(conciliationStatusCounts).length > 0 && (
+        <div className="bg-[#1a1c30] rounded-xl border border-[#1e2030] p-5">
+          <div className="flex items-center gap-2 mb-4">
+            <BarChart3 className="h-4 w-4 text-sky-400" />
+            <h2 className="text-sm font-bold text-slate-300 uppercase tracking-wider">Status das Conciliações</h2>
+          </div>
+          <div className="flex flex-wrap gap-2">
+            {Object.entries(conciliationStatusCounts)
+              .sort(([, a], [, b]) => b - a)
+              .map(([status, count]) => {
+                const meta = conciliationStatusMeta[status] || { label: status, color: "slate" }
+                const colorMap: Record<string, string> = {
+                  emerald: "bg-emerald-500/15 text-emerald-300 border-emerald-500/30",
+                  green: "bg-green-500/15 text-green-300 border-green-500/30",
+                  amber: "bg-amber-500/15 text-amber-300 border-amber-500/30",
+                  rose: "bg-rose-500/15 text-rose-300 border-rose-500/30",
+                  orange: "bg-orange-500/15 text-orange-300 border-orange-500/30",
+                  red: "bg-red-500/15 text-red-300 border-red-500/30",
+                  yellow: "bg-yellow-500/15 text-yellow-300 border-yellow-500/30",
+                  purple: "bg-purple-500/15 text-purple-300 border-purple-500/30",
+                  slate: "bg-slate-500/15 text-slate-300 border-slate-500/30",
+                  sky: "bg-sky-500/15 text-sky-300 border-sky-500/30",
+                  gray: "bg-gray-500/15 text-gray-300 border-gray-500/30",
+                }
+                return (
+                  <div
+                    key={status}
+                    className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border text-xs font-semibold ${colorMap[meta.color] || colorMap.slate}`}
+                  >
+                    <span>{meta.label}</span>
+                    <span className="opacity-70">·</span>
+                    <span>{count}</span>
+                  </div>
+                )
+              })}
+          </div>
+        </div>
+      )}
 
       {/* Performance Section */}
       {(minhaVenda || minhaAdimp) && (
@@ -448,44 +639,62 @@ export function DashboardV2() {
         </div>
       )}
 
-      {/* Future Modules - Placeholder Cards */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        <div className="bg-[#1a1c30] rounded-xl border border-[#1e2030] p-5 opacity-60 hover:opacity-80 transition-opacity">
-          <div className="flex items-center justify-between mb-3">
-            <Calendar className="h-5 w-5 text-sky-400" />
-            <span className="text-[10px] font-bold text-sky-500/70 uppercase tracking-wider">Em breve</span>
+      {/* Recent Activity */}
+      {(recentImports.length > 0 || recentComprovantes.length > 0 || recentConciliacoes.length > 0) && (
+        <div className="bg-[#1a1c30] rounded-xl border border-[#1e2030] p-5">
+          <div className="flex items-center gap-2 mb-4">
+            <Activity className="h-4 w-4 text-sky-400" />
+            <h2 className="text-sm font-bold text-slate-300 uppercase tracking-wider">Atividades Recentes</h2>
           </div>
-          <p className="text-sm font-semibold text-white">Agenda</p>
-          <p className="text-xs text-slate-500 mt-1">Agendamentos, compromissos e calendário integrado</p>
-        </div>
-
-        <div className="bg-[#1a1c30] rounded-xl border border-[#1e2030] p-5 opacity-60 hover:opacity-80 transition-opacity">
-          <div className="flex items-center justify-between mb-3">
-            <MessageSquare className="h-5 w-5 text-emerald-400" />
-            <span className="text-[10px] font-bold text-emerald-500/70 uppercase tracking-wider">Em breve</span>
+          <div className="space-y-3 max-h-80 overflow-y-auto">
+            {recentImports.slice(0, 3).map((item) => (
+              <div key={`imp-${item.id}`} className="flex items-center gap-3 bg-[#131520] rounded-lg p-3 border border-[#2a2d45]">
+                <div className="h-8 w-8 rounded-lg bg-indigo-500/10 text-indigo-400 flex items-center justify-center shrink-0">
+                  <Upload className="h-4 w-4" />
+                </div>
+                <div className="flex-1 min-w-0">
+                  <p className="text-xs font-medium text-slate-200 truncate">{item.arquivo_nome || "Importação"}</p>
+                  <p className="text-[10px] text-slate-500">{item.origem} · {item.created_at ? new Date(item.created_at).toLocaleDateString("pt-BR") : ""}</p>
+                </div>
+                {item.valor !== null && (
+                  <span className="text-xs font-semibold text-emerald-400 shrink-0">R$ {Number(item.valor).toFixed(2)}</span>
+                )}
+              </div>
+            ))}
+            {recentComprovantes.slice(0, 3).map((item) => (
+              <div key={`comp-${item.id}`} className="flex items-center gap-3 bg-[#131520] rounded-lg p-3 border border-[#2a2d45]">
+                <div className="h-8 w-8 rounded-lg bg-emerald-500/10 text-emerald-400 flex items-center justify-center shrink-0">
+                  <ScanLine className="h-4 w-4" />
+                </div>
+                <div className="flex-1 min-w-0">
+                  <p className="text-xs font-medium text-slate-200 truncate">{item.nome_pagador || "Comprovante"}</p>
+                  <p className="text-[10px] text-slate-500">{item.status} · {item.data_hora ? new Date(item.data_hora).toLocaleDateString("pt-BR") : ""}</p>
+                </div>
+                {item.valor !== null && (
+                  <span className="text-xs font-semibold text-emerald-400 shrink-0">R$ {Number(item.valor).toFixed(2)}</span>
+                )}
+              </div>
+            ))}
+            {recentConciliacoes.slice(0, 4).map((item) => {
+              const meta = conciliationStatusMeta[item.status] || { label: item.status, color: "slate" }
+              return (
+                <div key={`conc-${item.id}`} className="flex items-center gap-3 bg-[#131520] rounded-lg p-3 border border-[#2a2d45]">
+                  <div className="h-8 w-8 rounded-lg bg-amber-500/10 text-amber-400 flex items-center justify-center shrink-0">
+                    <Activity className="h-4 w-4" />
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-xs font-medium text-slate-200 truncate">{meta.label}</p>
+                    <p className="text-[10px] text-slate-500">{item.regra_aplicada} · {item.created_at ? new Date(item.created_at).toLocaleDateString("pt-BR") : ""}</p>
+                  </div>
+                  {item.valor_origem !== null && (
+                    <span className="text-xs font-semibold text-slate-300 shrink-0">R$ {Number(item.valor_origem).toFixed(2)}</span>
+                  )}
+                </div>
+              )
+            })}
           </div>
-          <p className="text-sm font-semibold text-white">WhatsApp</p>
-          <p className="text-xs text-slate-500 mt-1">Mensagens, notificações e comunicação automatizada</p>
         </div>
-
-        <div className="bg-[#1a1c30] rounded-xl border border-[#1e2030] p-5 opacity-60 hover:opacity-80 transition-opacity">
-          <div className="flex items-center justify-between mb-3">
-            <ScanLine className="h-5 w-5 text-purple-400" />
-            <span className="text-[10px] font-bold text-purple-500/70 uppercase tracking-wider">Em breve</span>
-          </div>
-          <p className="text-sm font-semibold text-white">OCR & Documentos</p>
-          <p className="text-xs text-slate-500 mt-1">Digitalização, leitura e extração de dados de documentos</p>
-        </div>
-
-        <div className="bg-[#1a1c30] rounded-xl border border-[#1e2030] p-5 opacity-60 hover:opacity-80 transition-opacity">
-          <div className="flex items-center justify-between mb-3">
-            <BarChart3 className="h-5 w-5 text-amber-400" />
-            <span className="text-[10px] font-bold text-amber-500/70 uppercase tracking-wider">Em breve</span>
-          </div>
-          <p className="text-sm font-semibold text-white">Relatórios</p>
-          <p className="text-xs text-slate-500 mt-1">Relatórios gerenciais, exportações e análises avançadas</p>
-        </div>
-      </div>
+      )}
 
       {/* Quick Actions */}
       <div className="bg-[#1a1c30] rounded-xl border border-[#1e2030] p-5">

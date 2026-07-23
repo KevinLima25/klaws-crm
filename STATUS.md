@@ -52,3 +52,26 @@
 - **Novos campos:** `motor_version`, `lote_importacao`, `lote_conciliacao`, `lote_ocr`, `lote_whatsapp`
 - **Novo status:** `AGUARDANDO_DOCUMENTO` (indicação de pagamento sem comprovante)
 - **Build:** ✅ 25+ páginas, 0 erros TypeScript
+
+## UX Sprint 1.1 — Responsividade e Mobile
+- **Sidebar:** ✅ Auto-close em navegação mobile, fechamento via Escape
+- **Touch targets:** ✅ Botões mínimo h-10, labels e controles com `touch-manipulation`
+- **Overflow:** ✅ `overflow-x-hidden` global + por página, tabelas com `overflow-x-auto`
+- **Layout:** ✅ Sidebar drawer + overlay, fechamento ao navegar (pathname watch)
+
+## UX Sprint 1.2 — Dashboard Inteligente
+- **API:** ✅ `/api/dashboard?period=N` — filtra por período, retorna status conciliação, imports recentes, comprovantes recentes, atividades
+- **Período:** ✅ Filtro 7/30/90/todos os dias
+- **Overview:** ✅ Cards reais: Importações, Comprovantes, Conciliações, Pendências
+- **Status conciliação:** ✅ Grid com contagens por status
+- **Atividades recentes:** ✅ Feed unificado de imports, comprovantes, conciliações
+- **Atalhos:** ✅ Mantidos (Chat, Conciliação, Importar, Administrar)
+- **Placeholders removidos:** ✅ "Em breve" (Agenda, WhatsApp, OCR, Relatórios) substituídos por dados reais
+
+## UX Sprint 2.0 — Timeline do Cliente
+- **Página:** ✅ `/crm/clientes/timeline` — busca por matrícula ou CPF
+- **API:** ✅ `GET /api/clientes/timeline?matricula=X&days=365`
+- **Fontes:** ✅ importações, conciliações, comprovantes (nunca por nome)
+- **Interface:** ✅ cabeçalho do cliente, timeline cronológica, filtros por tipo, loading/empty/erro
+- **Segurança:** ✅ RLS preservado, CPF mascarado, service role não exposto
+- **Sidebar:** ✅ Link "Timeline" adicionado na navegação principal

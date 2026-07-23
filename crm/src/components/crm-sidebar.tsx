@@ -25,6 +25,7 @@ import {
   Upload,
   PanelLeftClose,
   PanelLeft,
+  Clock,
 } from "lucide-react"
 import { cn } from "@/lib/utils"
 
@@ -128,6 +129,7 @@ export function CrmSidebar() {
           badge: chatUnread ? 1 : undefined,
           onClick: () => { setChatUnread(false); localStorage.setItem("klaws_chat_read", "true") },
         },
+        { href: "/crm/clientes/timeline", label: "Timeline", icon: Clock },
         { label: "Agenda", icon: Calendar, disabled: true },
       ],
     },

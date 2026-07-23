@@ -217,7 +217,7 @@ export default function AdminPage() {
 
                           <button
                             onClick={() => { setSelectedUser(u); setNewPassword(""); setConfirmPassword(""); setShowPassword(false); setResetMessage(null) }}
-                            className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold rounded-lg bg-indigo-600/20 text-indigo-300 hover:bg-indigo-600 hover:text-white transition-all border border-indigo-500/30"
+                            className="flex items-center gap-1.5 px-3 py-2 text-xs font-semibold rounded-lg bg-indigo-600/20 text-indigo-300 hover:bg-indigo-600 hover:text-white transition-all border border-indigo-500/30"
                           >
                             <Key className="h-3.5 w-3.5" />
                             Senha
