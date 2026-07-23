@@ -18,7 +18,7 @@ Motor deterministico de conciliacao bancaria que compara registros normalizados 
 | Extrato bancario | `csv` ou `planilha` | `importacoes` | Arquivos CSV/XLSX de extrato |
 | Planilha CTN | `ctn` | `importacoes` | Arquivo posicional CTN (tipo 1) |
 | Planilhas gerais | `planilha` | `importacoes` | XLS/XLSX com dados financeiros |
-| Comprovantes | — | `comprovantes` | Via OCR (integracao futura) |
+| Comprovantes OCR | — | `comprovantes` | Via Agente Comprovante (OCR Tesseract) |
 
 ---
 
@@ -37,11 +37,14 @@ Motor deterministico de conciliacao bancaria que compara registros normalizados 
 
 ## 4. REGRAS DE CONCILIACAO
 
-### Ordem de prioridade
+### Ordem de prioridade de identificadores
 
-1. **Matricula** (exata, UPPERCASE)
-2. **CPF** (11 digitos exatos)
-3. **Documento** (exato, sem espacos)
+1. **Documento** (identificador bancario / numero transacao)
+2. **Hash do comprovante** (`arquivo_drive_id` × `documento`)
+3. **Matricula** (exata, UPPERCASE)
+4. **CPF** (11 digitos exatos)
+5. **Valor + Data** (combinacao exata)
+6. **Nome** (sugestao apenas → PENDENTE_CONFERENCIA)
 
 ### A. CONCILIADO_EXATO (REGRA_A)
 - Matricula OU CPF exato
@@ -51,8 +54,8 @@ Motor deterministico de conciliacao bancaria que compara registros normalizados 
 - **Confianca:** deterministica
 
 ### B. CONCILIADO_DOCUMENTO (REGRA_B)
-- Documento exato
-- Valor compativel (diferenca <= R$ 0,02)
+- Documento exato (import import) OU hash do comprovante exato (import comprovante)
+- Valor exato (diferenca = R$ 0,00)
 - Registro ainda nao utilizado
 - **Confianca:** deterministica
 
@@ -62,8 +65,8 @@ Motor deterministico de conciliacao bancaria que compara registros normalizados 
 - **Confianca:** deterministica
 
 ### D. DIVERGENCIA_VALOR (REGRA_D)
-- Matricula/CPF/Documento correspondente
-- Diferenca de valor > R$ 0,02
+- Matricula/CPF/Documento/Hash correspondente
+- Diferenca de valor > R$ 0,00
 - **Confianca:** deterministica
 
 ### E. DIVERGENCIA_DATA (REGRA_E)
@@ -94,15 +97,15 @@ Motor deterministico de conciliacao bancaria que compara registros normalizados 
 
 | Parametro | Valor | Status |
 |---|---|---|
-| Tolerancia monetaria (documento) | R$ 0,02 | ⚠️ Pendente aprovacao |
-| Tolerancia data (compativel) | ± 1 dia | ⚠️ Pendente aprovacao |
-| Timezone | America/Sao_Paulo (UTC-3) | ⚠️ Pendente aprovacao |
+| Tolerancia monetaria | R$ 0,00 (exato obrigatorio) | ✅ Aprovado |
+| Tolerancia data (compativel) | ± 1 dia | ✅ Aprovado |
+| Timezone | America/Sao_Paulo (UTC-3) | ✅ Aprovado |
 | Arredondamento | 2 casas decimais (half-up) | Padrao |
 | Formato matricula | UPPERCASE, sem especiais | ✅ |
 | Formato CPF | 11 digitos apenas | ✅ |
-| Estornos | Nao tratado | ⚠️ Pendente |
-| Taxas bancarias | Nao tratado | ⚠️ Pendente |
-| Pagamentos agrupados/fracionados | PENDENTE_CONFERENCIA | ⚠️ Pendente |
+| Estornos | Nao tratado (preparado para futuro) | Sprint futuro |
+| Taxas bancarias | Nao tratado (preparado para futuro) | Sprint futuro |
+| Pagamentos agrupados/fracionados | PENDENTE_CONFERENCIA | Sprint futuro |
 
 ---
 
@@ -135,11 +138,25 @@ Motor deterministico de conciliacao bancaria que compara registros normalizados 
 
 ## 7. IDEMPOTENCIA
 
-- Chave unica: `{MIN(id_a, id_b)}:{MAX(id_a, id_b)}:{STATUS}` para pares
-- Chave unica: `{id}:{STATUS}` para registros isolados
-- UPSERT com `ON CONFLICT (idempotencia_key) DO NOTHING`
+- Chave unica: hash SHA256 deterministico de `{id_a}|{id_b}|{id_comprovante}|{status}`
+- UPSERT com `ON CONFLICT (idempotencia_key) DO NOTHING` (indice UNIQUE)
 - Segunda execucao nao gera duplicatas
 - Registros ja conciliados sao ignorados na busca de candidatos
+
+## 7.1. AUDITORIA (conciliacao_logs)
+
+Toda decisao do motor e registrada na tabela `conciliacao_logs`:
+
+| Coluna | Tipo | Descricao |
+|---|---|---|
+| `id` | UUID PK | Identificador unico |
+| `lote_execucao` | UUID | Vinculo com o lote |
+| `conciliacao_id` | FK conciliacoes | Vinculo com o resultado |
+| `acao` | TEXT | Tipo de acao (INICIO_EXECUCAO, MATCH_DOCUMENTO, etc.) |
+| `detalhes` | JSONB | Detalhes da decisao |
+| `created_at` | TIMESTAMPTZ | Timestamp |
+
+Acoes registradas: INICIO_EXECUCAO, DADOS_CARREGADOS, MATCH_DOCUMENTO, MATCH_COMPROVANTE_HASH, MATCH_MATRICULA, MATCH_CPF, MATCH_VALORDATA, SUGESTAO_NOME, AMBIGUO_*, CLASSIFICADO_SEM_PAR, COMPROVANTE_SEM_PAR, RESULTADOS_SALVOS, ERRO_SALVAR, ERRO_INESPERADO, FIM_EXECUCAO
 
 ---
 
@@ -207,7 +224,6 @@ Executa 14 cenarios de teste com dados controlados e retorna resultados.
 
 | Limitacao | Impacto | Solucao futura |
 |---|---|---|
-| Sem cruzamento com comprovantes | Comprovantes OCR nao participam da conciliacao | Sprint futuro |
 | Sem tratamento de estornos | Valores negativos sao tratados como normais | Regras adicionais |
 | Sem pagamentos fracionados | 1:1 apenas, nao 1:N ou N:M | Regra de rateio |
 | Sem taxas bancarias | Tarifas nao sao identificadas | Campo "tipo" na importacao |
@@ -261,5 +277,6 @@ Os registros originais em `importacoes` nunca sao alterados pelo motor.
 | `crm/src/app/api/conciliacao/route.ts` | API REST |
 | `crm/src/app/api/conciliacao/teste/route.ts` | Testes automatizados |
 | `crm/src/app/admin/conciliacao/page.tsx` | Interface de execucao |
-| `crm/supabase/migrations/00006_create_conciliacoes.sql` | Migration |
+| `crm/supabase/migrations/00006_create_conciliacoes.sql` | Migration tabela principal |
+| `crm/supabase/migrations/00007_create_conciliacao_logs.sql` | Migration tabela de auditoria |
 | `docs/conciliacao/MOTOR_CONCILIACAO.md` | Este documento |
