@@ -154,7 +154,7 @@ export default function AdminPage() {
             <button
               onClick={loadUsers}
               disabled={loadingUsers}
-              className="flex items-center gap-2 px-3.5 py-2 text-xs font-medium rounded-xl bg-[#1f2136] text-slate-300 hover:text-white border border-[#2a2d45] transition-all"
+              className="flex items-center gap-2 min-h-11 px-3.5 py-2 text-xs font-medium rounded-xl bg-[#1f2136] text-slate-300 hover:text-white border border-[#2a2d45] transition-all"
             >
               <RefreshCw className={`h-3.5 w-3.5 ${loadingUsers ? "animate-spin" : ""}`} />
               Atualizar Lista
@@ -205,7 +205,7 @@ export default function AdminPage() {
                               type="button"
                               onClick={() => handleToggleActive(u)}
                               disabled={togglingId === u.id}
-                              className={`relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none ${isActive ? "bg-emerald-500" : "bg-slate-700"}`}
+                              className={`relative inline-flex min-h-11 min-w-11 md:min-h-6 md:min-w-11 shrink-0 cursor-pointer items-center rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus-visible:ring-2 focus-visible:ring-indigo-500 focus-visible:ring-offset-2 ${isActive ? "bg-emerald-500" : "bg-slate-700"}`}
                               title={isActive ? "Ativo (clique para desativar)" : "Inativo (clique para ativar)"}
                             >
                               <span className={`pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out ${isActive ? "translate-x-5" : "translate-x-0"}`} />
@@ -217,7 +217,7 @@ export default function AdminPage() {
 
                           <button
                             onClick={() => { setSelectedUser(u); setNewPassword(""); setConfirmPassword(""); setShowPassword(false); setResetMessage(null) }}
-                            className="flex items-center gap-1.5 px-3 py-2 text-xs font-semibold rounded-lg bg-indigo-600/20 text-indigo-300 hover:bg-indigo-600 hover:text-white transition-all border border-indigo-500/30"
+                            className="flex items-center gap-1.5 min-h-11 px-3 py-2 text-xs font-semibold rounded-lg bg-indigo-600/20 text-indigo-300 hover:bg-indigo-600 hover:text-white transition-all border border-indigo-500/30"
                           >
                             <Key className="h-3.5 w-3.5" />
                             Senha
@@ -244,7 +244,7 @@ export default function AdminPage() {
                   <input
                     type="email" required value={form.email}
                     onChange={(e) => setForm({ ...form, email: e.target.value })}
-                    className="flex h-10 w-full rounded-xl border border-[#2a2d45] bg-[#131520] px-3 text-xs text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                    className="flex min-h-11 md:min-h-10 w-full rounded-xl border border-[#2a2d45] bg-[#131520] px-3 text-xs text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-indigo-500"
                     placeholder="email@exemplo.com"
                   />
                 </div>
@@ -253,7 +253,7 @@ export default function AdminPage() {
                   <input
                     type="text" required value={form.name}
                     onChange={(e) => setForm({ ...form, name: e.target.value })}
-                    className="flex h-10 w-full rounded-xl border border-[#2a2d45] bg-[#131520] px-3 text-xs text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                    className="flex min-h-11 md:min-h-10 w-full rounded-xl border border-[#2a2d45] bg-[#131520] px-3 text-xs text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-indigo-500"
                     placeholder="Nome completo"
                   />
                 </div>
@@ -262,7 +262,7 @@ export default function AdminPage() {
                   <input
                     type="text" required value={form.cargo}
                     onChange={(e) => setForm({ ...form, cargo: e.target.value })}
-                    className="flex h-10 w-full rounded-xl border border-[#2a2d45] bg-[#131520] px-3 text-xs text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                    className="flex min-h-11 md:min-h-10 w-full rounded-xl border border-[#2a2d45] bg-[#131520] px-3 text-xs text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-indigo-500"
                     placeholder="Ex: GERENTE"
                   />
                 </div>
@@ -271,13 +271,13 @@ export default function AdminPage() {
                   <input
                     type="text" value={form.password}
                     onChange={(e) => setForm({ ...form, password: e.target.value })}
-                    className="flex h-10 w-full rounded-xl border border-[#2a2d45] bg-[#131520] px-3 text-xs text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                    className="flex min-h-11 md:min-h-10 w-full rounded-xl border border-[#2a2d45] bg-[#131520] px-3 text-xs text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-indigo-500"
                     placeholder="Vazio = geração automática"
                   />
                 </div>
                 <button
                   type="submit" disabled={creating}
-                  className="inline-flex h-10 w-full items-center justify-center rounded-xl bg-emerald-600 text-xs font-bold text-white hover:bg-emerald-500 transition-all disabled:opacity-60 shadow-md"
+                  className="inline-flex min-h-11 md:min-h-10 w-full items-center justify-center rounded-xl bg-emerald-600 text-xs font-bold text-white hover:bg-emerald-500 transition-all disabled:opacity-60 shadow-md"
                 >
                   {creating ? "Criando..." : "Criar Usuário"}
                 </button>
@@ -299,7 +299,7 @@ export default function AdminPage() {
 
               <button
                 onClick={handleSync} disabled={syncing}
-                className="inline-flex h-10 w-full items-center justify-center rounded-xl bg-gradient-to-tr from-indigo-500 to-purple-600 text-xs font-bold text-white hover:shadow-lg transition-all disabled:opacity-60 shadow-md"
+                className="inline-flex min-h-11 md:min-h-10 w-full items-center justify-center rounded-xl bg-gradient-to-tr from-indigo-500 to-purple-600 text-xs font-bold text-white hover:shadow-lg transition-all disabled:opacity-60 shadow-md"
               >
                 {syncing ? "Sincronizando..." : "Sincronizar"}
               </button>
@@ -327,7 +327,7 @@ export default function AdminPage() {
                   <p className="text-xs text-indigo-400 font-medium">{selectedUser.name || selectedUser.email}</p>
                 </div>
               </div>
-              <button onClick={() => setSelectedUser(null)} className="flex h-8 w-8 items-center justify-center rounded-lg text-slate-400 hover:text-white hover:bg-[#2a2d45] transition-all">
+              <button onClick={() => setSelectedUser(null)} className="flex min-h-11 min-w-11 md:h-8 md:w-8 items-center justify-center rounded-lg text-slate-400 hover:text-white hover:bg-[#2a2d45] transition-all">
                 <X className="h-4 w-4" />
               </button>
             </div>
@@ -342,7 +342,7 @@ export default function AdminPage() {
                     placeholder="Mínimo de 6 caracteres"
                     className="flex h-11 w-full rounded-xl border border-[#2a2d45] bg-[#131520] px-4 py-2 pr-10 text-sm text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-indigo-500"
                   />
-                  <button type="button" onClick={() => setShowPassword(!showPassword)} className="absolute right-3 top-3 text-slate-400 hover:text-white">
+                  <button type="button" onClick={() => setShowPassword(!showPassword)} className="absolute right-1.5 top-1.5 p-2.5 text-slate-400 hover:text-white">
                     {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                   </button>
                 </div>

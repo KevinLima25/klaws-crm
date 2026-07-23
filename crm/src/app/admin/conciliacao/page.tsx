@@ -231,7 +231,7 @@ export default function ConciliacaoPage() {
             <select
               value={statusFilter}
               onChange={(e) => { setStatusFilter(e.target.value); setPage(1) }}
-              className="bg-[#131520] border border-[#1e2030] rounded-lg px-3 py-1.5 text-xs text-slate-300"
+              className="bg-[#131520] border border-[#1e2030] rounded-lg min-h-11 md:min-h-0 px-3 py-1.5 text-xs text-slate-300"
             >
               <option value="">Todos os status</option>
               {Object.keys(STATUS_COLORS).map((s) => (
