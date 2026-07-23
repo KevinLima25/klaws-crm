@@ -27,6 +27,7 @@ import {
   PanelLeft,
   Clock,
   AlertTriangle,
+  Headphones,
 } from "lucide-react"
 import { cn } from "@/lib/utils"
 
@@ -123,6 +124,7 @@ export function CrmSidebar() {
       title: "Geral",
       items: [
         { href: "/crm", label: "Dashboard", icon: LayoutDashboard },
+        { href: "/crm/central", label: "Central", icon: Headphones },
         {
           href: "/crm/chat",
           label: "Chat de Atendimento",
