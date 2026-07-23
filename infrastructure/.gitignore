@@ -1,0 +1,23 @@
+# Dados persistentes
+n8n/data/
+n8n/files/
+n8n/n8n-files/
+
+# Sessões WAHA
+waha/sessions/
+waha/media/
+
+# Dependências
+node_modules/
+.next/
+
+# Ambiente
+.env
+.env.local
+
+# Logs
+*.log
+
+# Sistema
+Thumbs.db
+.DS_Store

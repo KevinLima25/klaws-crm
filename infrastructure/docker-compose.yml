@@ -1,0 +1,107 @@
+services:
+  n8n:
+    image: n8nio/n8n
+    container_name: n8n
+    restart: unless-stopped
+    ports:
+      - "5678:5678"
+    environment:
+      - N8N_HOST=localhost
+      - N8N_PORT=5678
+      - N8N_PROTOCOL=http
+      - N8N_WEBHOOK_URL=https://thread-urologist-catching.ngrok-free.dev/
+      - GENERIC_TIMEZONE=America/Sao_Paulo
+      - TZ=America/Sao_Paulo
+      - N8N_PROXY_HOPS=1
+      - N8N_ENCRYPTION_KEY=${N8N_ENCRYPTION_KEY}
+      - N8N_RUNNERS_ENABLED=true
+      - N8N_CODE_NODE_ENABLED_MODULES=fs,crypto
+      - N8N_ENFORCE_SETTINGS_FILE_PERMISSIONS=false
+      - OCR_SPACE_API_KEY=${OCR_SPACE_API_KEY}
+    volumes:
+      - ./n8n/data:/home/node/.n8n
+      - ./n8n/n8n-files:/home/node/.n8n-files
+      - ./n8n/files:/files
+    networks:
+      - klaws_infra
+    healthcheck:
+      test: ["CMD", "wget", "-q", "-O-", "http://localhost:5678/healthz"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+  ocr-service:
+    build:
+      context: ./ocr-service
+      dockerfile: Dockerfile
+    container_name: ocr-service
+    restart: unless-stopped
+    ports:
+      - "3002:3002"
+    networks:
+      - klaws_infra
+    healthcheck:
+      test: ["CMD", "wget", "-q", "-O-", "http://localhost:3002/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
+
+  waha:
+    image: devlikeapro/waha
+    container_name: waha
+    restart: unless-stopped
+    ports:
+      - "3000:3000"
+    environment:
+      - WAHA_DASHBOARD_USERNAME=${WAHA_DASHBOARD_USERNAME}
+      - WAHA_DASHBOARD_PASSWORD=${WAHA_DASHBOARD_PASSWORD}
+      - WHATSAPP_SWAGGER_USERNAME=${WHATSAPP_SWAGGER_USERNAME}
+      - WHATSAPP_SWAGGER_PASSWORD=${WHATSAPP_SWAGGER_PASSWORD}
+      - WAHA_API_KEY=${WAHA_API_KEY}
+      - TZ=America/Sao_Paulo
+      - WHATSAPP_HOOK_URL=http://host.docker.internal:5678/webhook/waha
+      - WHATSAPP_HOOK_EVENTS=message.any
+    volumes:
+      - ./waha/sessions:/app/.sessions
+      - ./waha/media:/app/.media
+    networks:
+      - klaws_infra
+    healthcheck:
+      test: ["CMD", "wget", "-q", "-O-", "http://localhost:3000/dashboard"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
+
+  crm:
+    build:
+      context: ../crm
+      dockerfile: Dockerfile
+    container_name: crm
+    restart: unless-stopped
+    ports:
+      - "3001:3000"
+    volumes:
+      - ../crm:/app
+      - /app/node_modules
+      - /app/.next
+    environment:
+      - PORT=3000
+    networks:
+      - klaws_infra
+    depends_on:
+      n8n:
+        condition: service_started
+    healthcheck:
+      test: ["CMD", "wget", "-q", "-O-", "http://localhost:3000/api/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 30s
+
+networks:
+  klaws_infra:
+    name: klaws_infra
+    driver: bridge

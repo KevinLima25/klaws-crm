@@ -44,3 +44,11 @@ Thumbs.db
 # WAHA session data
 waha/sessions/
 waha/media/
+
+# Infraestrutura canônica — dados persistentes
+infrastructure/n8n/data/
+infrastructure/n8n/files/
+infrastructure/n8n/n8n-files/
+infrastructure/waha/sessions/
+infrastructure/waha/media/
+infrastructure/.env

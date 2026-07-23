@@ -1,74 +1,14 @@
+# ⚠️ DEPRECIADO
+# A infraestrutura Docker foi migrada para o diretório canônico:
+#   C:\KLAWS\infrastructure\docker-compose.yml
+#
+# Use o novo arquivo para gerenciar todos os serviços:
+#   cd C:\KLAWS\infrastructure
+#   docker compose up -d
+#
+# Mantido apenas como referência. Remover após validação do INFRA 3.4.
+
 services:
-  waha:
-    image: devlikeapro/waha
-    container_name: waha
-    restart: unless-stopped
-    ports:
-      - "3000:3000"
-    environment:
-      # Acesso ao Dashboard / Swagger (http://localhost:3000/dashboard)
-      - WAHA_DASHBOARD_USERNAME=USERNAME_REMOVED
-      - WAHA_DASHBOARD_PASSWORD=PASSWORD_REMOVED
-      - WHATSAPP_SWAGGER_USERNAME=USERNAME_REMOVED
-      - WHATSAPP_SWAGGER_PASSWORD=PASSWORD_REMOVED
-      # Chave usada nas requisições da API (header X-Api-Key) e nas credenciais do n8n
-      - WAHA_API_KEY=WAHA_API_KEY_REMOVED
-      - TZ=America/Sao_Paulo
-      # Webhook para o n8n
-      - WHATSAPP_HOOK_URL=http://host.docker.internal:5678/webhook/waha
-      - WHATSAPP_HOOK_EVENTS=message.any
-    volumes:
-      # Sessões do WhatsApp — mantém o login após reiniciar
-      - ./waha/sessions:/app/.sessions
-      # Mídias recebidas/enviadas
-      - ./waha/media:/app/.media
-    networks:
-      - automation
-
-  n8n:
-    image: n8nio/n8n
-    container_name: n8n
-    restart: unless-stopped
-    ports:
-      - "5678:5678"
-    environment:
-      - N8N_HOST=localhost
-      - N8N_PORT=5678
-      - N8N_PROTOCOL=http
-      # URL usada pelos webhooks
-      - N8N_WEBHOOK_URL=https://thread-urologist-catching.ngrok-free.dev/
-      - GENERIC_TIMEZONE=America/Sao_Paulo
-      - TZ=America/Sao_Paulo
-      - N8N_PROXY_HOPS=1
-
-      # IMPORTANTE: defina uma chave fixa. Se mudar, perde acesso às credenciais salvas.
-      - N8N_ENCRYPTION_KEY=N8N_ENCRYPTION_KEY_REMOVED
-      - N8N_RUNNERS_ENABLED=true
-      - N8N_CODE_NODE_ENABLED_MODULES=fs,crypto
-      - N8N_ENFORCE_SETTINGS_FILE_PERMISSIONS=false
-
-      # OCR.space API key (free: https://ocr.space)
-      - OCR_SPACE_API_KEY=
-    volumes:
-      # Banco SQLite, credenciais, workflows e configs do n8n
-      - ./n8n/data:/home/node/.n8n
-      - ./n8n/n8n-files:/home/node/.n8n-files
-      # Pasta para ler/escrever arquivos do host dentro dos workflows
-      - ./n8n/files:/files
-    networks:
-      - automation
-
-  ocr-service:
-    build:
-      context: ./ocr-service
-      dockerfile: Dockerfile
-    container_name: ocr-service
-    restart: unless-stopped
-    ports:
-      - "3002:3002"
-    networks:
-      - automation
-
   crm:
     build:
       context: ./crm
