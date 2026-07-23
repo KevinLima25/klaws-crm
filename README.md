@@ -33,23 +33,25 @@ Cada agente é um workflow independente no n8n. O Master Router recebe todas as 
 ## Estrutura de Pastas
 
 ```
-├── .ai/                    # Documentação do projeto
-│   ├── ARCHITECTURE.md     # Arquitetura oficial
-│   ├── CONTRACT.md         # Regras de desenvolvimento
-│   └── PROJECT_STATE.md    # Estado atual do projeto
-├── crm/                    # Frontend Next.js
-│   ├── src/app/            # Páginas e API Routes
-│   └── src/components/     # Componentes React
-├── n8n/
-│   ├── data/               # Dados do n8n (SQLite, arquivos)
-│   └── n8n-files/          # Comprovantes processados
-├── ocr-service/            # Microserviço Tesseract
-│   ├── Dockerfile
-│   ├── server.js
-│   └── package.json
-├── waha/                   # Sessões WhatsApp
-├── docker-compose.yml      # Orchestrador de containers
-└── sprint*.js              # Scripts de deploy e teste
+├── .ai/                        # Documentação do projeto
+│   ├── ARCHITECTURE.md         # Arquitetura oficial
+│   ├── CONTRACT.md             # Regras de desenvolvimento
+│   ├── PROJECT_STATE.md        # Estado atual do projeto
+│   ├── LOCAL_DEVELOPMENT.md    # Guia de desenvolvimento local
+│   ├── reports/                # Inventários, auditorias, planos
+│   ├── review/                 # Revisões e ADRs
+│   └── sprints/                # Sprints UX, INFRA
+├── crm/                        # Frontend Next.js
+│   ├── src/app/                # Páginas e API Routes
+│   └── src/components/         # Componentes React
+├── infrastructure/             # Infraestrutura Docker (canônico)
+│   ├── docker-compose.yml      # Orquestração unificada
+│   ├── n8n/                    # Dados persistentes do n8n
+│   ├── ocr-service/            # Microserviço Tesseract
+│   ├── waha/                   # Sessões WhatsApp
+│   └── scripts/                # Scripts e backups
+├── docker-compose.yml          # ⚠️ Depreciado — usar infrastructure/
+└── sprint*.js                  # Scripts de deploy e teste legados
 ```
 
 ## Como Instalar
@@ -66,8 +68,9 @@ Cada agente é um workflow independente no n8n. O Master Router recebe todas as 
    # Edite crm/.env.local com suas chaves Supabase
    ```
 
-3. Inicie os containers:
+3. Inicie os containers (infraestrutura unificada):
    ```bash
+   cd infrastructure
    docker compose up -d
    ```
 
@@ -78,13 +81,17 @@ Cada agente é um workflow independente no n8n. O Master Router recebe todas as 
 
 ## Como Executar
 
-### Containers
+### Containers (diretório canônico)
 
-```bash
+```powershell
+cd C:\KLAWS\infrastructure
+
 docker compose up -d                    # Iniciar todos
 docker compose up -d ocr-service        # Apenas OCR
 docker compose restart n8n              # Reiniciar n8n
 docker compose logs n8n --tail 50       # Ver logs
+docker compose build --no-cache crm     # Reconstruir CRM
+docker compose up -d --force-recreate crm  # Atualizar CRM
 ```
 
 ### Testes do Workflow
@@ -96,6 +103,9 @@ node sprint18_final.js    # Testa Agente_Comprovante com OCR
 ### Deploy de Workflow
 
 Os scripts `sprint*.js` realizam deploy e testes dos workflows no n8n via API.
+
+> **Nota:** O diretório legado `C:\Users\User\Downloads\Waha N&N\` contém scripts duplicados.
+> Use sempre os arquivos em `C:\KLAWS\` ou `C:\KLAWS\infrastructure\scripts\`.
 
 ## Workflows n8n
 
