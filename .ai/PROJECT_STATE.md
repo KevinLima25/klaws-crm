@@ -1,11 +1,13 @@
 # KLAWS CRM — PROJECT STATE
 
 **Data:** 2026-07-22
-**Versão:** 1.4
-**Sprint Atual:** Sprint 1.9 — Estabilização da Plataforma
-**Release:** v0.1.0-alpha
-**Commit:** `a0a3f7c` (Sprint 1.9 - estabilizacao)
+**Versão:** 2.0
+**Sprint Atual:** Sprint 1.9.1 — Remoção definitiva de credenciais
+**Release:** v0.2.0-alpha
+**Commit:** `8bd6e61` (Sprint Vercel 1.1)
 **Branch:** `master`
+**Infraestrutura:** ✅ Concluída
+**Status:** Pronto para desenvolvimento funcional
 
 ---
 
