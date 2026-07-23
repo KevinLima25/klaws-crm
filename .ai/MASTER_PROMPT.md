@@ -5,11 +5,10 @@ Leia, nesta ordem:
 1. `.ai/CONTRACT.md`
 2. `.ai/ARCHITECTURE.md`
 3. `.ai/PROJECT_STATE.md`
-4. `.ai/STATUS.md`
-5. `.ai/RISKS.md`
-6. `.ai/ROADMAP_AUTONOMO.md`
-7. `.ai/AUTONOMOUS_MODE.md`
-8. `.ai/SPRINT_EXECUTION.md`
+4. `.ai/RISKS.md`
+5. `.ai/ROADMAP_AUTONOMO.md`
+6. `.ai/AUTONOMOUS_MODE.md`
+7. `.ai/SPRINT_EXECUTION.md`
 
 Execute, em ordem obrigatória:
 
@@ -53,7 +52,7 @@ Restrições:
 - não misturar sprints no mesmo commit;
 - preservar o agente de Agenda;
 - fazer backup de workflows n8n antes de alterações;
-- atualizar PROJECT_STATE, STATUS, TODO_NEXT e RISKS quando aplicável.
+- atualizar PROJECT_STATE, TODO_NEXT e RISKS quando aplicável.
 
 Entrega final:
 1. sprints concluídos;

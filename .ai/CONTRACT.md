@@ -486,7 +486,6 @@ Todo Workflow alterado deve possuir um backup correspondente.
 Toda alteração arquitetural ou funcional deve atualizar, quando aplicável:
 
 - PROJECT_STATE.md
-- STATUS.md
 - README.md
 - TODO_NEXT.md
 - RISKS.md

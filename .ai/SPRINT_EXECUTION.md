@@ -1,8 +1,19 @@
 # CHECKLIST PADRÃO
 
 ## Preparação
-- Ler documentos obrigatórios.
-- Verificar branch e working tree.
+- Verificar diretório atual (`C:\KLAWS`) e raiz Git (`C:\KLAWS`).
+- Verificar remoto (`KevinLima25/klaws-crm.git`) e branch (`master`).
+- Validar existência dos documentos obrigatórios:
+  - `.ai/PROJECT_STATE.md`
+  - `.ai/CONTRACT.md`
+  - `.ai/ARCHITECTURE.md`
+  - `.ai/ROADMAP_AUTONOMO.md`
+  - `.ai/QUALITY_GATE.md`
+  - `.ai/SPRINT_EXECUTION.md`
+  - `.ai/PENDENCIAS_EXECUCAO_AUTONOMA.md`
+  - `.ai/sprints/UX_3.1.md`
+  - `.ai/sprints/UX_3.2.md`
+  - `.ai/sprints/ORDEM_DE_EXECUCAO.md`
 - Identificar páginas e componentes afetados.
 - Confirmar compatibilidade com CONTRACT e ARCHITECTURE.
 
@@ -27,7 +38,6 @@ Não declarar build aprovado se não foi executado.
 ## Documentação
 Atualizar, conforme aplicável:
 - PROJECT_STATE;
-- STATUS;
 - TODO_NEXT;
 - RISKS;
 - README.
