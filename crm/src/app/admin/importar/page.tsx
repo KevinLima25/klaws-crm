@@ -3,6 +3,8 @@
 import { useState } from "react"
 import { Button } from "@/components/ui/button"
 import { Loader2, Upload, FileText, CheckCircle2, AlertCircle } from "lucide-react"
+import { PageHeader } from "@/components/page-header"
+import { LoadingState } from "@/components/loading-state"
 
 export default function ImportarPage() {
   const [file, setFile] = useState<File | null>(null)
@@ -37,56 +39,70 @@ export default function ImportarPage() {
     }
   }
 
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-[#131520] p-4 md:p-6 lg:p-8">
+        <div className="max-w-2xl mx-auto">
+          <PageHeader title="Importar Arquivo" description="CSV, XLS, XLSX ou CTN - processamento em andamento" />
+          <LoadingState variant="skeleton" rows={3} message="Importando..." />
+        </div>
+      </div>
+    )
+  }
+
   return (
-    <div className="p-6 max-w-2xl mx-auto">
-      <h1 className="text-2xl font-bold mb-6">Importar Arquivo</h1>
+    <div className="min-h-screen bg-[#131520] p-4 md:p-6 lg:p-8 font-sans">
+      <div className="max-w-2xl mx-auto space-y-6">
+        <PageHeader title="Importar Arquivo" description="Faça upload de arquivos CSV, XLS, XLSX ou CTN para processamento" />
 
-      <form onSubmit={handleSubmit} className="space-y-6">
-        <div className="border-2 border-dashed border-slate-300 rounded-xl p-8 text-center">
-          <FileText className="w-12 h-12 mx-auto text-slate-400 mb-4" />
-          <p className="text-sm text-slate-600 mb-2">CSV, XLS, XLSX ou CTN</p>
-          <input
-            type="file"
-            accept=".csv,.xls,.xlsx,.ctn"
-            onChange={(e) => setFile(e.target.files?.[0] || null)}
-            className="block w-full text-sm text-slate-500 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-emerald-50 file:text-emerald-700 hover:file:bg-emerald-100"
-          />
-        </div>
-
-        <Button type="submit" disabled={!file || loading} className="w-full">
-          {loading ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <Upload className="w-4 h-4 mr-2" />}
-          {loading ? "Importando..." : "Importar"}
-        </Button>
-      </form>
-
-      {error && (
-        <div className="mt-6 p-4 bg-red-50 border border-red-200 rounded-xl flex items-start gap-3">
-          <AlertCircle className="w-5 h-5 text-red-500 mt-0.5 shrink-0" />
-          <p className="text-sm text-red-700">{error}</p>
-        </div>
-      )}
-
-      {result && (
-        <div className="mt-6 p-4 bg-emerald-50 border border-emerald-200 rounded-xl">
-          <div className="flex items-center gap-2 mb-3">
-            <CheckCircle2 className="w-5 h-5 text-emerald-600" />
-            <h3 className="font-semibold text-emerald-800">Importação Concluída</h3>
+        <form onSubmit={handleSubmit} className="space-y-6">
+          <div className="border-2 border-dashed border-[#2a2d45] rounded-2xl p-8 text-center bg-[#1a1c30] hover:border-indigo-500/40 transition-colors">
+            <FileText className="w-12 h-12 mx-auto text-slate-500 mb-4" />
+            <p className="text-sm text-slate-400 mb-2">Arraste o arquivo ou clique para selecionar</p>
+            <p className="text-xs text-slate-500 mb-4">Formatos aceitos: CSV, XLS, XLSX, CTN</p>
+            <input
+              type="file"
+              accept=".csv,.xls,.xlsx,.ctn"
+              onChange={(e) => setFile(e.target.files?.[0] || null)}
+              className="block w-full text-sm text-slate-400 file:mr-4 file:py-2 file:px-4 file:rounded-xl file:border-0 file:text-sm file:font-semibold file:bg-indigo-500/20 file:text-indigo-400 hover:file:bg-indigo-500/30 file:transition-all file:cursor-pointer"
+            />
           </div>
-          <div className="text-sm text-emerald-700 space-y-1">
-            <p>Total de linhas no arquivo: <strong>{result.total}</strong></p>
-            <p>Registros importados: <strong>{result.imported}</strong></p>
-            <p>Linhas com erro: <strong>{result.errors?.length || 0}</strong></p>
+
+          <Button type="submit" disabled={!file || loading} className="w-full h-11 rounded-xl text-sm font-bold">
+            {loading ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <Upload className="w-4 h-4 mr-2" />}
+            {loading ? "Importando..." : "Importar"}
+          </Button>
+        </form>
+
+        {error && (
+          <div className="p-4 rounded-xl bg-rose-500/10 border border-rose-500/30 flex items-start gap-3">
+            <AlertCircle className="w-5 h-5 text-rose-400 mt-0.5 shrink-0" />
+            <p className="text-sm text-rose-300">{error}</p>
           </div>
-          {result.errors?.length > 0 && (
-            <div className="mt-3 text-sm text-red-600">
-              <p className="font-medium">Erros encontrados:</p>
-              <ul className="list-disc pl-5 mt-1">
-                {result.errors.map((e: string, i: number) => <li key={i}>{e}</li>)}
-              </ul>
+        )}
+
+        {result && (
+          <div className="p-5 rounded-xl bg-emerald-500/10 border border-emerald-500/30">
+            <div className="flex items-center gap-2 mb-3">
+              <CheckCircle2 className="w-5 h-5 text-emerald-400" />
+              <h3 className="font-semibold text-emerald-300">Importação Concluída</h3>
             </div>
-          )}
-        </div>
-      )}
+            <div className="text-sm text-emerald-200 space-y-1">
+              <p>Total de linhas no arquivo: <strong>{result.total}</strong></p>
+              <p>Registros importados: <strong>{result.imported}</strong></p>
+              <p>Linhas com erro: <strong>{result.errors?.length || 0}</strong></p>
+            </div>
+            {result.errors?.length > 0 && (
+              <div className="mt-3 text-sm text-rose-300">
+                <p className="font-medium">Erros encontrados:</p>
+                <ul className="list-disc pl-5 mt-1">
+                  {result.errors.map((e: string, i: number) => <li key={i}>{e}</li>)}
+                </ul>
+              </div>
+            )}
+          </div>
+        )}
+      </div>
     </div>
   )
 }
