@@ -2,15 +2,15 @@ import * as XLSX from 'xlsx'
 
 export type ImportRow = {
   origem: string
-  matricula?: string | null
-  nome?: string | null
-  cpf?: string | null
-  valor?: number | null
-  data_pagamento?: string | null
-  banco?: string | null
-  agencia?: string | null
-  conta?: string | null
-  documento?: string | null
+  matricula?: any
+  nome?: any
+  cpf?: any
+  valor?: any
+  data_pagamento?: any
+  banco?: any
+  agencia?: any
+  conta?: any
+  documento?: any
   linha_original?: string | null
   arquivo_nome?: string | null
 }
@@ -42,30 +42,12 @@ function normalizeHeader(header: string): string {
   return h
 }
 
-export function parseXLSX(buffer: Buffer, filename: string): ImportResult {
-  const result: ImportResult = { rows: [], errors: [], total: 0, imported: 0 }
-  try {
-    const wb = XLSX.read(buffer, { type: 'buffer', cellDates: true })
-    const ws = wb.Sheets[wb.SheetNames[0]]
-    const json = XLSX.utils.sheet_to_json<any>(ws, { defval: null, raw: false })
-    result.total = json.length
-    for (const row of json) {
-      const mapped = mapRow(row, filename)
-      if (mapped) { mapped.arquivo_nome = filename; result.rows.push(mapped) }
-    }
-    result.imported = result.rows.length
-  } catch (e: any) {
-    result.errors.push(`Erro ao ler arquivo: ${e.message}`)
-  }
-  return result
-}
-
 export function parseCSV(buffer: Buffer, filename: string): ImportResult {
   const result: ImportResult = { rows: [], errors: [], total: 0, imported: 0 }
   try {
-    const wb = XLSX.read(buffer, { type: 'buffer', raw: false })
+    const wb = XLSX.read(buffer, { type: 'buffer', raw: true, cellDates: false })
     const ws = wb.Sheets[wb.SheetNames[0]]
-    const json = XLSX.utils.sheet_to_json<any>(ws, { defval: null, raw: false })
+    const json = XLSX.utils.sheet_to_json<any>(ws, { defval: null, raw: true })
     result.total = json.length
     for (const row of json) {
       const mapped = mapRow(row, filename)
@@ -74,6 +56,24 @@ export function parseCSV(buffer: Buffer, filename: string): ImportResult {
     result.imported = result.rows.length
   } catch (e: any) {
     result.errors.push(`Erro ao ler CSV: ${e.message}`)
+  }
+  return result
+}
+
+export function parseXLSX(buffer: Buffer, filename: string): ImportResult {
+  const result: ImportResult = { rows: [], errors: [], total: 0, imported: 0 }
+  try {
+    const wb = XLSX.read(buffer, { type: 'buffer', cellDates: false })
+    const ws = wb.Sheets[wb.SheetNames[0]]
+    const json = XLSX.utils.sheet_to_json<any>(ws, { defval: null, raw: true })
+    result.total = json.length
+    for (const row of json) {
+      const mapped = mapRow(row, filename)
+      if (mapped) { mapped.arquivo_nome = filename; result.rows.push(mapped) }
+    }
+    result.imported = result.rows.length
+  } catch (e: any) {
+    result.errors.push(`Erro ao ler arquivo: ${e.message}`)
   }
   return result
 }
@@ -158,41 +158,19 @@ function mapRow(input: any, filename: string): ImportRow | null {
     }
   }
 
-  let origem = 'planilha'
-  if (filename.toLowerCase().endsWith('.csv')) origem = 'csv'
-  else if (filename.toLowerCase().endsWith('.xls') || filename.toLowerCase().endsWith('.xlsx')) origem = 'planilha'
-
-  let valor: number | null = null
-  if (mapped.valor !== undefined) {
-    const v = String(mapped.valor).replace(/[R$\s.]/g, '').replace(',', '.')
-    const parsed = parseFloat(v)
-    if (!isNaN(parsed)) valor = parsed
-  }
-
-  let data_pagamento: string | null = null
-  if (mapped.data_pagamento) {
-    const d = String(mapped.data_pagamento).trim()
-    if (/^\d{4}-\d{2}-\d{2}$/.test(d)) {
-      data_pagamento = d
-    } else if (/^\d{2}\/\d{2}\/\d{4}$/.test(d)) {
-      const [dia, mes, ano] = d.split('/')
-      data_pagamento = `${ano}-${mes}-${dia}`
-    } else if (/^\d{8}$/.test(d)) {
-      data_pagamento = `${d.substring(4,8)}-${d.substring(2,4)}-${d.substring(0,2)}`
-    }
-  }
+  const origem = filename.toLowerCase().endsWith('.csv') ? 'csv' : 'planilha'
 
   return {
     origem,
-    matricula: mapped.matricula || null,
-    nome: mapped.nome || null,
-    cpf: mapped.cpf ? String(mapped.cpf).replace(/[^\d]/g, '') : null,
-    valor,
-    data_pagamento,
-    banco: mapped.banco || null,
-    agencia: mapped.agencia || null,
-    conta: mapped.conta || null,
-    documento: mapped.documento || null,
+    matricula: mapped.matricula ?? null,
+    nome: mapped.nome ?? null,
+    cpf: mapped.cpf ?? null,
+    valor: mapped.valor ?? null,
+    data_pagamento: mapped.data_pagamento ?? null,
+    banco: mapped.banco ?? null,
+    agencia: mapped.agencia ?? null,
+    conta: mapped.conta ?? null,
+    documento: mapped.documento ?? null,
     linha_original: JSON.stringify(input),
   }
 }
