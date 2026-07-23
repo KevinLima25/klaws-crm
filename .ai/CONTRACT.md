@@ -406,6 +406,95 @@ Uma implementação mais lenta é preferível a uma implementação que coloque 
 
 ---
 
+# REGRA 21 — Gerenciamento de Credenciais
+
+Toda credencial do projeto deve permanecer fora do código-fonte.
+
+É proibido armazenar:
+
+- API Keys
+- Tokens
+- Passwords
+- Secrets
+- Bearer Tokens
+- JWTs
+- Credenciais do Supabase
+- Credenciais Google
+- Credenciais WAHA
+- Credenciais n8n
+
+em:
+
+- Code Nodes
+- Workflows JSON
+- Scripts
+- Código-fonte
+- Documentação
+- Backups
+
+Sempre utilizar:
+
+- Credenciais nativas do n8n quando disponíveis.
+- Variáveis de ambiente (.env).
+- .env.example contendo apenas placeholders.
+
+Caso o Runner do n8n impeça acesso às variáveis de ambiente:
+
+Nunca criar soluções alternativas inseguras.
+
+Prioridade:
+
+1. Credenciais do n8n
+2. HTTP Request Node utilizando credenciais
+3. Microserviço intermediário
+
+Nunca inserir credenciais diretamente em Workflows.
+
+Antes de qualquer Release executar obrigatoriamente uma varredura procurando:
+
+- SUPABASE_SERVICE_ROLE_KEY
+- sb_secret_
+- N8N_API_KEY
+- WAHA_API_KEY
+- Bearer
+- Authorization
+- Password
+- Token
+
+Nenhuma credencial poderá permanecer versionada.
+
+---
+
+# REGRA 22 — Backup obrigatório de Workflows
+
+Antes de qualquer alteração significativa em um Workflow do n8n:
+
+É obrigatório gerar um backup JSON atualizado.
+
+Salvar em:
+
+backups/workflows/
+
+Nunca depender apenas do banco SQLite do n8n.
+
+Todo Workflow alterado deve possuir um backup correspondente.
+
+---
+
+# REGRA 23 — Documentação obrigatória
+
+Toda alteração arquitetural ou funcional deve atualizar, quando aplicável:
+
+- PROJECT_STATE.md
+- STATUS.md
+- README.md
+- TODO_NEXT.md
+- RISKS.md
+
+Não é permitido concluir uma Sprint deixando a documentação divergente da implementação.
+
+O PROJECT_STATE.md passa a ser a principal fonte de verdade sobre o estado técnico do projeto.
+
 # REGRA FINAL
 
 A Sprint possui prioridade sobre qualquer decisão da IA.

@@ -1,5 +1,12 @@
 # KLAWS CRM — Status Atual
 
+## Quality Gate (2026-07-23) — Aprovado
+- **Build:** ✅ 27 páginas compiladas, 0 erros TypeScript
+- **Lint:** ⚠️ 91 errors, 47 warnings (todos `any` ou `setState-in-effect` — pré-existentes, não bloqueiam)
+- **check_state.js:** ✅ path corrigido (absoluto → relativo com `__dirname`)
+- **Dashboard RPC:** ✅ `.catch()` tipado corretamente (build passou)
+- **Conciliacao:** ✅ `motor_version/lote_*` adicionado ao push de comprovantes sem par
+
 ## Workflows n8n
 
 ### 1. CRM Chat (WFCRM001chat01)

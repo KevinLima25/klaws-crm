@@ -1,13 +1,14 @@
 # KLAWS CRM — PROJECT STATE
 
 **Data:** 2026-07-23
-**Versão:** 2.1
-**Sprint Atual:** Sprint 2.3A — Hotfix Arquitetural Conciliação
+**Versão:** 2.2
+**Sprint Atual:** UX 2.1 — Touch Targets e Refinamentos Mobile
+**Quality Gate:** ✅ Aprovado
 **Release:** v0.2.0-alpha
-**Commit:** `8bd6e61` (Sprint Vercel 1.1)
+**Commit:** `c02ca36` (UX 1.1/1.2/2.0)
 **Branch:** `master`
 **Infraestrutura:** ✅ Concluída
-**Status:** Pronto para desenvolvimento funcional
+**Status:** Quality Gate aprovado — pronto para UX 2.1
 
 ---
 
@@ -669,3 +670,23 @@ Microserviço HTTP independente que recebe base64Image, salva em /tmp/, executa 
 - `TODO_NEXT.md` — atualizado para Sprint 2
 - `README.md` — adicionado WAHA Webhook, roadmap atualizado
 - `.ai/PROJECT_STATE.md` — documentação Sprint 1.9
+
+---
+
+## Quality Gate (2026-07-23) — Aprovado
+
+| Item | Status | Obs |
+|---|---|---|
+| Build | ✅ 27 páginas, 0 TypeScript errors | Compilação + type-check |
+| Lint | ⚠️ 91 errors, 47 warnings | Todos `no-explicit-any` ou `set-state-in-effect` — pré-existentes |
+| check_state.js | ✅ path corrigido | absoluto → relativo com `__dirname` |
+| Dashboard RPC `.catch()` | ✅ Tipado | Build passou |
+| Conciliacao campos faltantes | ✅ `motor_version`/`lote_*` adicionados | Push de comprovante sem par |
+
+### Correções realizadas no Quality Gate
+
+| Arquivo | Correção |
+|---|---|
+| `crm/src/app/api/dashboard/route.ts:64` | `.catch()` sem `Promise<any>` — adicionado cast |
+| `crm/src/lib/conciliacao.ts:487` | Push sem `motor_version`/`lote_*` — adicionados |
+| `check_state.js:2` | Path absoluto `C:\Users\...` → `path.join(__dirname, ...)` |

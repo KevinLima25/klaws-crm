@@ -61,7 +61,7 @@ export async function GET(req: Request) {
       .select("usuario_baixa, homologado, valor_gerado")
       .neq("usuario_baixa", "")
       .not("usuario_baixa", "is", null),
-    admin.rpc("get_conciliacao_status_counts" as any).select("*").then(r => r).catch(() => ({ data: null, error: null })),
+    (admin.rpc("get_conciliacao_status_counts" as any).select("*").then(r => r) as Promise<any>).catch(() => ({ data: null, error: null })),
     admin.from("importacoes").select("id", { count: "exact", head: true }),
     admin.from("comprovantes").select("id", { count: "exact", head: true }),
     applyPeriod(

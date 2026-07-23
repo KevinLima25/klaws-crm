@@ -1,5 +1,7 @@
 const { DatabaseSync } = require('node:sqlite');
-const db = new DatabaseSync('C:\\Users\\User\\Downloads\\Waha N&N\\n8n\\data\\database.sqlite');
+const path = require('node:path');
+// Agora usa path relativo — compatível com C:\KLAWS
+const db = new DatabaseSync(path.join(__dirname, 'n8n', 'data', 'database.sqlite'));
 const wh = db.prepare('SELECT * FROM webhook_entity').all();
 console.log('Webhooks:', JSON.stringify(wh, null, 2));
 const wfs = db.prepare("SELECT id, name, active FROM workflow_entity").all();

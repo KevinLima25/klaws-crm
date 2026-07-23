@@ -1,0 +1,231 @@
+======================================================================
+RELATORIO FINAL — SPRINT 2.3 / 2.3R
+MOTOR DE CONCILIACAO BANCARIA
+KLAWS CRM
+======================================================================
+Data: 2026-07-22
+Commits: 3ed90f5, db26839, cea7a24
+Branch: master
+Build: 25 paginas, 0 erros TypeScript
+======================================================================
+
+----------------------------------------------------------------------
+1. DECISOES DO USUARIO (APLICADAS)
+----------------------------------------------------------------------
+| Decisao                        | Valor                         |
+| Tolerancia monetaria           | R$ 0,00 (exato obrigatorio)   |
+| Tolerancia de data             | +/- 1 dia                     |
+| Timezone                       | America/Sao_Paulo (UTC-3)     |
+| Estornos                       | Nao implementar               |
+| Taxas bancarias                | Nao implementar               |
+| Pagamentos fracionados (1:N)   | Nao implementar               |
+| Comprovantes OCR               | Integrados imediatamente      |
+| Auditoria                      | Tabela conciliacao_logs       |
+| Idempotencia                   | Hash SHA256 deterministico    |
+
+----------------------------------------------------------------------
+2. ARQUITETURA IMPLEMENTADA
+----------------------------------------------------------------------
+importacoes (CSV/CTN/XLSX) + comprovantes (OCR)
+              |
+              v
+    Motor (conciliacao.ts)
+    +-- 6 fases iterativas (por prioridade)
+    |   Fase 1: Documento
+    |   Fase 2: Hash Comprovante (arquivo_drive_id)
+    |   Fase 3: Matricula
+    |   Fase 4: CPF
+    |   Fase 5: Valor + Data
+    |   Fase 6: Nome (sugestao -> PENDENTE_CONFERENCIA)
+    +-- Indices O(1) por chave (evita O(n^2))
+              |
+              v
+       conciliacoes (+) conciliacao_logs (auditoria)
+
+----------------------------------------------------------------------
+3. REGRAS DE CONCILIACAO (8 deterministicas)
+----------------------------------------------------------------------
+| #  | Regra     | Status                            | Gatilho                          |
+| A  | REGRA_A   | CONCILIADO_EXATO                  | Matricula/CPF + valor + data     |
+| B  | REGRA_B   | CONCILIADO_DOCUMENTO              | Documento/hash + valor exato     |
+| C  | REGRA_C   | PENDENTE_SEM_CORRESPONDENCIA      | Nenhum candidato                 |
+| D  | REGRA_D   | DIVERGENCIA_VALOR                 | Key match + valor diferente      |
+| E  | REGRA_E   | DIVERGENCIA_DATA                  | Key match + data diferente       |
+| F  | REGRA_F   | AMBIGUO_MULTIPLOS_CANDIDATOS      | >1 candidato atende              |
+| G  | REGRA_G   | DUPLICADO                         | Documento ja utilizado           |
+| H  | REGRA_H   | DADOS_INSUFICIENTES               | Sem matricula/CPF/documento      |
+
+Prioridade de identificadores:
+  Documento > Hash Comprovante > Matricula > CPF > Valor+Data > Nome
+
+Modelo de resultado (por registro):
+{
+  "status": "CONCILIADO_EXATO",
+  "registro_origem_id": "...",
+  "registro_destino_id": "...",
+  "regra_aplicada": "REGRA_A_CONCILIADO_EXATO",
+  "confianca": "deterministica",
+  "valor_origem": 150.00,
+  "valor_destino": 150.00,
+  "diferenca_valor": 0.00,
+  "data_origem": "2026-06-15",
+  "data_destino": "2026-06-15",
+  "motivo": "...",
+  "executado_em": "...",
+  "executado_por": "sistema"
+}
+
+----------------------------------------------------------------------
+4. MIGRATIONS CRIADAS
+----------------------------------------------------------------------
+00006: conciliacoes          (tabela principal, 10 status, JSONB, RLS)
+00007: conciliacao_logs      (auditoria, FK conciliacoes, RLS)
+
+SQL consolidado:
+  crm/supabase/migrations/00006_create_conciliacoes.sql
+  crm/supabase/migrations/00007_create_conciliacao_logs.sql
+
+Para aplicar: copiar e executar no Supabase SQL Editor.
+
+----------------------------------------------------------------------
+5. ARQUIVOS ALTERADOS
+----------------------------------------------------------------------
+NOVOS (8):
+  crm/supabase/migrations/00006_create_conciliacoes.sql
+  crm/supabase/migrations/00007_create_conciliacao_logs.sql
+  crm/src/lib/conciliacao.ts
+  crm/src/app/api/conciliacao/route.ts
+  crm/src/app/api/conciliacao/teste/route.ts
+  crm/src/app/admin/conciliacao/page.tsx
+  docs/conciliacao/MOTOR_CONCILIACAO.md
+
+MODIFICADOS (5):
+  crm/src/components/crm-sidebar.tsx         (link Conciliacao)
+  .ai/PROJECT_STATE.md                       (docs Sprint 2.3/2.3R)
+  STATUS.md                                  (secao Conciliacao)
+  RISKS.md                                   (riscos conciliacao)
+  TODO_NEXT.md                               (Sprint 2.3 concluido)
+
+----------------------------------------------------------------------
+6. TESTES (14 cenarios, via POST /api/conciliacao/teste)
+----------------------------------------------------------------------
+| #  | Cenario                                    | Esperado                         |
+| 1  | Correspondencia exata                       | CONCILIADO_EXATO                 |
+| 2  | Valor diferente                            | DIVERGENCIA_VALOR                |
+| 3  | Data diferente                             | DIVERGENCIA_DATA                 |
+| 4  | Sem matricula/CPF/doc                      | DADOS_INSUFICIENTES              |
+| 5  | CPF exato                                  | CONCILIADO_EXATO                 |
+| 6  | Documento exato + valor                     | CONCILIADO_DOCUMENTO             |
+| 7  | Dois candidatos                            | AMBIGUO_MULTIPLOS_CANDIDATOS     |
+| 8  | Registro duplicado                         | AMBIGUO_MULTIPLOS_CANDIDATOS     |
+| 9  | Idempotencia (2a execucao)                 | 0 processados                    |
+| 10 | Campos insuficientes                       | DADOS_INSUFICIENTES              |
+| 11 | Valores normalizados                       | CONCILIADO_EXATO                 |
+| 12 | Datas ISO                                  | CONCILIADO_EXATO                 |
+| 13 | Idempotencia (3 execucoes)                 | 2a e 3a = 0                      |
+| 14 | Lote com registro invalido                 | 1 exato + 1 insuficiente         |
+
+Executar: curl -X POST http://localhost:3001/api/conciliacao/teste
+
+----------------------------------------------------------------------
+7. API
+----------------------------------------------------------------------
+POST /api/conciliacao         Executa o motor (filtros opcionais)
+GET  /api/conciliacao         Consulta resultados (paginacao + filtro)
+POST /api/conciliacao/teste   14 cenarios automatizados (cria/valida/limpa)
+
+Sumario de resposta (POST /api/conciliacao):
+{
+  "status": "ok",
+  "sumario": {
+    "lote_execucao": "uuid",
+    "total_processados": 100,
+    "conciliados_exatos": 45,
+    "conciliados_documento": 12,
+    "pendentes_sem_correspondencia": 20,
+    "divergencia_valor": 8,
+    "divergencia_data": 5,
+    "divergencia_valor_data": 3,
+    "ambiguos": 2,
+    "duplicados": 3,
+    "dados_insuficientes": 2,
+    "pendentes_conferencia": 0,
+    "erros": [],
+    "executado_em": "2026-07-22T..."
+  }
+}
+
+----------------------------------------------------------------------
+8. AUDITORIA (conciliacao_logs)
+----------------------------------------------------------------------
+Acoes registradas automaticamente:
+  INICIO_EXECUCAO, DADOS_CARREGADOS,
+  MATCH_DOCUMENTO, MATCH_COMPROVANTE_HASH, MATCH_MATRICULA,
+  MATCH_CPF, MATCH_VALORDATA,
+  SUGESTAO_NOME, AMBIGUO_DOCUMENTO, AMBIGUO_MATRICULA, AMBIGUO_CPF,
+  AMBIGUO_VALORDATA, AMBIGUO_COMPROVANTE_HASH,
+  CLASSIFICADO_SEM_PAR, COMPROVANTE_SEM_PAR,
+  RESULTADOS_SALVOS, ERRO_SALVAR, ERRO_INESPERADO, FIM_EXECUCAO
+
+Cada entrada contem: lote_execucao, acao, detalhes (JSONB), timestamp.
+
+----------------------------------------------------------------------
+9. IDEMPOTENCIA / ROLLBACK
+----------------------------------------------------------------------
+Chave: SHA256(id_a | id_b | id_comprovante | status)
+UPSERT com ON CONFLICT (idempotencia_key) DO NOTHING
+Indice UNIQUE na coluna idempotencia_key
+
+Rollback de um lote:
+DELETE FROM public.conciliacao_logs WHERE lote_execucao = '<uuid>';
+DELETE FROM public.conciliacoes WHERE lote_execucao = '<uuid>';
+
+Registros originais em importacoes e comprovantes NUNCA sao alterados.
+
+----------------------------------------------------------------------
+10. TOLERANCIAS (APROVADAS)
+----------------------------------------------------------------------
+| Parametro               | Valor                    |
+| Tolerancia monetaria    | R$ 0,00 (exato)          |
+| Tolerancia data         | +/- 1 dia                |
+| Timezone                | America/Sao_Paulo (UTC-3)|
+| Arredondamento          | 2 casas decimais         |
+| Formato matricula       | UPPERCASE, sem especiais |
+| Formato CPF             | 11 digitos apenas        |
+| Estornos                | Sprint futuro            |
+| Taxas bancarias         | Sprint futuro            |
+| Pagamentos fracionados  | Sprint futuro            |
+
+----------------------------------------------------------------------
+11. RISCOS RESTANTES
+----------------------------------------------------------------------
+| Risco                                    | Nivel  |
+| Sem tratamento de estornos              | BAIXO  |
+| Sem pagamentos fracionados (1:N)        | BAIXO  |
+| Sem taxas bancarias                     | BAIXO  |
+| Sem interface de conferencia (ambiguos) | BAIXO  |
+| Timezone fixo (UTC-3)                   | BAIXO  |
+
+----------------------------------------------------------------------
+12. PENDENCIAS PARA DECISAO (RESOLVIDAS)
+----------------------------------------------------------------------
+Todas as 7 pendencias foram resolvidas pelo usuario.
+Nao ha pendencias restantes para esta Sprint.
+
+----------------------------------------------------------------------
+13. COMMITS GERADOS
+----------------------------------------------------------------------
+3ed90f5  Sprint 2.3 - motor de conciliacao bancaria
+db26839  Sprint 2.3R - tolerancia R$ 0.00, comprovantes OCR, auditoria, hash idempotencia
+cea7a24  docs: atualizar PROJECT_STATE.md com Sprint 2.3R
+
+----------------------------------------------------------------------
+14. CONFIGURACOES EXTERNAS NECESSARIAS
+----------------------------------------------------------------------
+- Aplicar migration 00006 no Supabase SQL Editor
+- Aplicar migration 00007 no Supabase SQL Editor
+- (Opcional) Executar POST /api/conciliacao/teste para validar cenarios
+
+----------------------------------------------------------------------
+FIM DO RELATORIO
+======================================================================

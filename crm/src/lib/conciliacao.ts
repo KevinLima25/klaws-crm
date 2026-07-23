@@ -499,6 +499,11 @@ export async function executarConciliacao(
           data_destino: null,
           idempotencia_key: key,
           motivo: "Comprovante sem correspondencia em nenhuma importacao",
+          motor_version: MOTOR_VERSION,
+          lote_importacao: null,
+          lote_conciliacao: loteExecucao,
+          lote_ocr: null,
+          lote_whatsapp: null,
         })
         log(loteExecucao, "COMPROVANTE_SEM_PAR", { comprovante_id: comp.id })
       }

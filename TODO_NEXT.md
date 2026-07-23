@@ -1,51 +1,37 @@
 # KLAWS CRM — Próximas Tarefas (Priorizadas)
 
-## ✅ Sprint 2.3 — Motor de Conciliação Bancária (CONCLUÍDO)
+## ✅ Quality Gate (2026-07-23) — Aprovado
 
-- **Motor determinístico implementado** com 8 regras (A-H)
-- **API `/api/conciliacao`** funcional (POST executar, GET consultar)
-- **Frontend `/admin/conciliacao`** funcional
-- **14 cenários de teste** automatizados
-- **Migration 00006** criada (tabela conciliacoes)
-- **Documentação completa** em `docs/conciliacao/MOTOR_CONCILIACAO.md`
+- **Build:** ✅ 27 páginas, 0 TypeScript errors
+- **Lint:** ⚠️ 91 errors (pré-existentes, não bloqueiam)
+- **Correções:** dashboard RPC `.catch()`, conciliacao campos `motor_version`/`lote_*`, `check_state.js` path
 
-## 🔴 Sprint 2 — Próximos Passos
+## 🔴 Próximo — UX 2.1 (Touch Targets e Refinamentos Mobile)
+
+Iniciar conforme `ROADMAP_AUTONOMO.md` → `.ai/sprints/UX_2.1.md`
+
+## 🟡 Backlog Técnico (não implementar agora)
 
 ### 1. Autenticar WAHA Session
-- **O quê:** Escanear QR code via WAHA Dashboard para ativar recebimento de mensagens WhatsApp
-- **Como:** Acessar http://localhost:3000/dashboard (credenciais: LimaSL / 147258369) → Sessions → webjs → QR Code
-- **Risco:** Sem isso, WhatsApp não envia mensagens para o n8n
+- **O quê:** Escanear QR code via WAHA Dashboard
+- **Risco:** WhatsApp não envia mensagens para o n8n
 
-### 2. Configurar Google Calendar OAuth
-- **O quê:** Registrar redirect URI e configurar OAuth no Google Cloud Console
+### 2. Google Calendar OAuth redirect
 - **Por quê:** AI Agent precisa criar/verificar eventos
-- **Impacto:** Bloqueia agenda automatizada
 
-### 3. Criar Agente Conciliação
-- **O quê:** Workflow n8n para processar CTN + Extrato bancário
-- **Nós esperados:** Webhook → Parse CSV/XLS → Buscar Comprovantes → Matcher → Divergências → Response
-- **Dependência:** Migration 003 aplicada (tabela comprovantes existe)
+### 3. Dashboard RPC
+- **Proposta técnica:** migration 00009 (`get_conciliacao_status_counts`)
+- **Status:** Fallback ativo (mais lento, funcional)
 
-## 🟡 Melhorias de Robustez
+### 4. Timeline pagination
+- **Backlog UX:** cursor pagination futuro
 
-### 4. Mover Secrets para Docker Secrets
-- **O quê:** Remover N8N_ENCRYPTION_KEY, WAHA_API_KEY, WAHA_DASHBOARD_PASSWORD do docker-compose.yml
-- **Alternativa:** Usar .env não versionado
-- **Risco:** 🔴 Crítico — chaves expostas no repositório
+### 5. OCR estruturado
+- **Sprint UX 3.0:** extrair matrícula/CPF/documento/valor/data/hash
+- **Pré-produção:** `comprovantes.matriculas` não populado
 
-### 5. Adicionar Healthchecks nos Containers
-- **O quê:** Healthcheck para n8n, ocr-service, waha, crm
-- **Por quê:** Monitoramento básico sem ferramenta externa
+### 6. Mover Secrets para Docker Secrets
+- **Risco:** 🔴 Chaves expostas no repositório
 
-### 6. Remover Scripts de Debug da Raiz
-- **O quê:** Mover scripts sprint*.js para pasta própria
-- **Por quê:** Poluição visual na raiz do projeto
-
-## 🟢 Qualidade
-
-### 7. Testes E2E para Fluxo de Chat
-- **O quê:** Playwright tests para envio de mensagem, upload de arquivos, resposta do bot
-
-### 8. Refatorar chat-interface-v2.tsx
-- **O quê:** Extrair hooks `useChat` e `useFileUpload`
-- **Por quê:** Componente com 374 linhas mistura lógica e UI
+### 7. Healthchecks nos Containers
+### 8. Limpeza scripts debug da raiz
