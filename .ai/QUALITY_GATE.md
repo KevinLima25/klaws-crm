@@ -15,21 +15,21 @@
 | 9 | **Pendências** | PENDENCIAS_EXECUCAO_AUTONOMA.md | Nenhuma pendência bloqueante ativa |
 | 10 | **Caminhos** | `Select-String` por paths absolutos antigos | Nenhuma referência a `C:\Users\User\Downloads` |
 
-## Resultado 2026-07-23
+## Resultado 2026-07-23 — UX 2.2 (Central de Pendências)
 
 | Item | Status |
 |---|---|
-| Build | ✅ 27 páginas, 0 TypeScript errors |
-| Lint | ⚠️ 91 erros pré-existentes tolerados |
+| Build | ✅ 29 páginas, 0 TypeScript errors |
+| Lint | ⚠️ Erros pré-existentes tolerados (`any` catch pattern, `setState-in-effect`) |
 | Secret scan | ✅ Nenhuma credencial |
 | Responsividade | ✅ (Sprint 1.1) |
-| Performance | ⚠️ 5 `setState-in-effect` pré-existentes |
-| Segurança | ✅ RLS preservado |
-| Documentação | ✅ PROJECT_STATE, STATUS, TODO_NEXT, ROADMAP atualizados |
-| Commit | ✅ Apenas arquivos intencionais |
+| Performance | ⚠️ `setState-in-effect` pré-existentes |
+| Segurança | ✅ RLS preservado (service role não exposto) |
+| Documentação | ✅ QUALITY_GATE atualizado |
+| Commit | ✅ Apenas arquivos do UX 2.2 |
 | Pendências | ✅ Nenhuma bloqueante |
 | Caminhos | ✅ Nenhuma ref `C:\Users\User\Downloads` |
 
 ## Decisão
 
-**QUALITY GATE APROVADO** — Próximo Sprint autorizado: UX 2.1 (Touch Targets e Refinamentos Mobile)
+**QUALITY GATE APROVADO** — UX 2.2 (Central de Pendências) concluído. Próximo: UX 2.3 (Review Gate da Fase 2).

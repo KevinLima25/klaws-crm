@@ -6,17 +6,17 @@ import Link from "next/link"
 import { createClient } from "@/lib/supabase/client"
 import { Button } from "@/components/ui/button"
 import { Avatar, AvatarFallback } from "@/components/ui/avatar"
-import { 
-  MessageSquare, 
-  LogOut, 
-  LayoutDashboard, 
-  CheckSquare, 
-  Calendar, 
-  Users, 
+import {
+  MessageSquare,
+  LogOut,
+  LayoutDashboard,
+  CheckSquare,
+  Calendar,
+  Users,
   User,
-  TrendingUp, 
-  FolderGit2, 
-  Settings, 
+  TrendingUp,
+  FolderGit2,
+  Settings,
   HelpCircle,
   ChevronDown,
   ChevronLeft,
@@ -26,6 +26,7 @@ import {
   PanelLeftClose,
   PanelLeft,
   Clock,
+  AlertTriangle,
 } from "lucide-react"
 import { cn } from "@/lib/utils"
 
@@ -159,6 +160,7 @@ export function CrmSidebar() {
         { href: "/admin/agentes", label: "Agentes", icon: Bot },
         { href: "/admin/importar", label: "Importar", icon: Upload },
         { href: "/admin/conciliacao", label: "Conciliação", icon: CheckSquare },
+        { href: "/admin/pendencias", label: "Pendências", icon: AlertTriangle },
       ],
     })
   }
