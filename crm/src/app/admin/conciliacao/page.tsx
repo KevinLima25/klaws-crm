@@ -11,6 +11,7 @@ type Sumario = {
   total_processados: number
   conciliados_exatos: number
   conciliados_documento: number
+  aguardando_documento: number
   pendentes_sem_correspondencia: number
   divergencia_valor: number
   divergencia_data: number
@@ -18,8 +19,10 @@ type Sumario = {
   ambiguos: number
   duplicados: number
   dados_insuficientes: number
+  pendentes_conferencia: number
   erros: string[]
   executado_em: string
+  motor_version: string
 }
 
 type ConciliacaoRow = {
@@ -43,6 +46,7 @@ type ConciliacaoRow = {
 const STATUS_COLORS: Record<string, string> = {
   CONCILIADO_EXATO: "bg-emerald-500/10 text-emerald-400 border-emerald-500/20",
   CONCILIADO_DOCUMENTO: "bg-sky-500/10 text-sky-400 border-sky-500/20",
+  AGUARDANDO_DOCUMENTO: "bg-indigo-500/10 text-indigo-400 border-indigo-500/20",
   PENDENTE_SEM_CORRESPONDENCIA: "bg-slate-500/10 text-slate-400 border-slate-500/20",
   DIVERGENCIA_VALOR: "bg-amber-500/10 text-amber-400 border-amber-500/20",
   DIVERGENCIA_DATA: "bg-orange-500/10 text-orange-400 border-orange-500/20",
@@ -196,6 +200,7 @@ export default function ConciliacaoPage() {
               <StatCard label="Processados" value={sumario.total_processados} color="slate" />
               <StatCard label="Exatos" value={sumario.conciliados_exatos} color="emerald" />
               <StatCard label="Documento" value={sumario.conciliados_documento} color="sky" />
+              <StatCard label="Aguard. Doc." value={sumario.aguardando_documento} color="indigo" />
               <StatCard label="Pendentes" value={sumario.pendentes_sem_correspondencia} color="slate" />
               <StatCard label="Div. Valor" value={sumario.divergencia_valor} color="amber" />
               <StatCard label="Div. Data" value={sumario.divergencia_data} color="orange" />
@@ -213,7 +218,7 @@ export default function ConciliacaoPage() {
               </div>
             )}
             <p className="text-[10px] text-slate-500 mt-4">
-              Lote: {sumario.lote_execucao} | Executado em: {new Date(sumario.executado_em).toLocaleString("pt-BR")}
+              Lote: {sumario.lote_execucao} | Motor: v{sumario.motor_version} | Executado em: {new Date(sumario.executado_em).toLocaleString("pt-BR")}
             </p>
           </div>
         )}
@@ -316,6 +321,7 @@ function StatCard({ label, value, color }: { label: string; value: number; color
   const colorMap: Record<string, string> = {
     emerald: "text-emerald-400 bg-emerald-500/10 border-emerald-500/20",
     sky: "text-sky-400 bg-sky-500/10 border-sky-500/20",
+    indigo: "text-indigo-400 bg-indigo-500/10 border-indigo-500/20",
     amber: "text-amber-400 bg-amber-500/10 border-amber-500/20",
     orange: "text-orange-400 bg-orange-500/10 border-orange-500/20",
     red: "text-red-400 bg-red-500/10 border-red-500/20",

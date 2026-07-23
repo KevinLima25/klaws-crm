@@ -7,6 +7,7 @@ import { createAdminClient } from "@/lib/supabase/admin"
 const TOLERANCIA_MONETARIA = 0.00 // valor exato obrigatorio
 const TOLERANCIA_DATA_DIAS = 1 // ± 1 dia para compatibilidade
 const TIMEZONE = "America/Sao_Paulo"
+const MOTOR_VERSION = "2.3.0"
 
 // ========================================
 // CAMPOS MINIMOS PARA CONCILIACAO
@@ -25,6 +26,7 @@ const CAMPOS_IDENTIFICACAO = ["matricula", "cpf", "documento"] as const
 export type StatusConciliacao =
   | "CONCILIADO_EXATO"
   | "CONCILIADO_DOCUMENTO"
+  | "AGUARDANDO_DOCUMENTO"
   | "PENDENTE_SEM_CORRESPONDENCIA"
   | "DIVERGENCIA_VALOR"
   | "DIVERGENCIA_DATA"
@@ -94,6 +96,11 @@ export type ConciliacaoResult = {
   data_destino: string | null
   idempotencia_key: string
   motivo: string | null
+  motor_version: string
+  lote_importacao: string | null
+  lote_conciliacao: string | null
+  lote_ocr: string | null
+  lote_whatsapp: string | null
 }
 
 export type FiltrosConciliacao = {
@@ -107,6 +114,7 @@ export type SumarioConciliacao = {
   total_processados: number
   conciliados_exatos: number
   conciliados_documento: number
+  aguardando_documento: number
   pendentes_sem_correspondencia: number
   divergencia_valor: number
   divergencia_data: number
@@ -117,6 +125,7 @@ export type SumarioConciliacao = {
   pendentes_conferencia: number
   erros: string[]
   executado_em: string
+  motor_version: string
 }
 
 // ========================================
@@ -183,6 +192,7 @@ type LogEntry = {
   conciliacao_id?: string
   acao: string
   detalhes: Record<string, any>
+  motor_version: string
 }
 
 let logsPendentes: LogEntry[] = []
@@ -193,6 +203,7 @@ function log(lote: string, acao: string, detalhes: Record<string, any>, concilia
     conciliacao_id: conciliacaoId,
     acao,
     detalhes,
+    motor_version: MOTOR_VERSION,
   })
 }
 
@@ -223,6 +234,7 @@ export async function executarConciliacao(
     total_processados: 0,
     conciliados_exatos: 0,
     conciliados_documento: 0,
+    aguardando_documento: 0,
     pendentes_sem_correspondencia: 0,
     divergencia_valor: 0,
     divergencia_data: 0,
@@ -233,6 +245,7 @@ export async function executarConciliacao(
     pendentes_conferencia: 0,
     erros: [],
     executado_em: new Date().toISOString(),
+    motor_version: MOTOR_VERSION,
   }
 
   log(loteExecucao, "INICIO_EXECUCAO", { filtros: filtros || {} })
@@ -843,6 +856,8 @@ function criarResultado(
   dataDestino: string | null,
   motivo?: string | null
 ): ConciliacaoResult {
+  const loteConc = loteExecucao
+
   return {
     id_importacao_a: idA,
     id_importacao_b: idB,
@@ -863,6 +878,11 @@ function criarResultado(
       status
     ),
     motivo: motivo || null,
+    motor_version: MOTOR_VERSION,
+    lote_importacao: null,
+    lote_conciliacao: loteConc,
+    lote_ocr: null,
+    lote_whatsapp: null,
   }
 }
 
@@ -947,6 +967,11 @@ async function salvarResultados(
     idempotencia_key: r.idempotencia_key,
     lote_execucao: loteExecucao,
     motivo: r.motivo,
+    motor_version: r.motor_version,
+    lote_importacao: r.lote_importacao,
+    lote_conciliacao: r.lote_conciliacao,
+    lote_ocr: r.lote_ocr,
+    lote_whatsapp: r.lote_whatsapp,
   }))
 
   const BATCH_SIZE = 100
@@ -973,6 +998,9 @@ async function salvarResultados(
         break
       case "CONCILIADO_DOCUMENTO":
         sumario.conciliados_documento++
+        break
+      case "AGUARDANDO_DOCUMENTO":
+        sumario.aguardando_documento++
         break
       case "PENDENTE_SEM_CORRESPONDENCIA":
         sumario.pendentes_sem_correspondencia++
@@ -1005,6 +1033,7 @@ async function salvarResultados(
     total: sumario.total_processados,
     conciliados_exatos: sumario.conciliados_exatos,
     conciliados_documento: sumario.conciliados_documento,
+    aguardando_documento: sumario.aguardando_documento,
     pendentes: sumario.pendentes_sem_correspondencia,
     divergencia_valor: sumario.divergencia_valor,
     divergencia_data: sumario.divergencia_data,

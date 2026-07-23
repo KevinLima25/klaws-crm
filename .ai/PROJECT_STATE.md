@@ -1,8 +1,8 @@
 # KLAWS CRM — PROJECT STATE
 
-**Data:** 2026-07-22
-**Versão:** 2.0
-**Sprint Atual:** Sprint 1.9.1 — Remoção definitiva de credenciais
+**Data:** 2026-07-23
+**Versão:** 2.1
+**Sprint Atual:** Sprint 2.3A — Hotfix Arquitetural Conciliação
 **Release:** v0.2.0-alpha
 **Commit:** `8bd6e61` (Sprint Vercel 1.1)
 **Branch:** `master`
@@ -120,13 +120,23 @@
 | Fallback OCR.space → Tesseract | ❌ Não implementado | `$env` bloqueado impede ambas as abordagens com API key |
 | Playwright OCR | ❌ Não implementado | Mencionado na arquitetura |
 
-### Conciliação — 🔴 0%
+### Conciliação — 🟢 50%
 
 | Item | Status | Obs |
 |---|---|---|
-| Workflow | ❌ Não existe | Não criado |
-| CTN processing | ❌ Não existe | — |
-| Extrato processing | ❌ Não existe | — |
+| Motor deterministico | ✅ 8 regras (A-H), 6 fases, índices O(1) | conciliacao.ts |
+| Tolerância R$ 0,00 | ✅ Exato obrigatório | Aprovado |
+| Tolerância data ±1 dia | ✅ Aprovado | ±1 dia |
+| Comprovantes OCR | ✅ Integrado como fonte principal | Conciliação com hash/matrícula |
+| Auditoria (logs) | ✅ conciliacao_logs com todas as ações | Migration 00007 |
+| Idempotência | ✅ Hash SHA256 determinístico | UNIQUE index |
+| Versionamento motor | ✅ motor_version = "2.3.0" | Migration 00008 |
+| Status AGUARDANDO_DOCUMENTO | ✅ Disponível | Novo status |
+| Lotes (import/conc/ocr/whatsapp) | ✅ Estrutura preparada | Migration 00008 |
+| API REST | ✅ POST + GET + Testes | 14 cenários |
+| Frontend | ✅ Executar + sumário + tabela filtro | /admin/conciliacao |
+| Processamento fila | ❌ Não implementado | Sprint futuro |
+| Dashboard de conciliação | ❌ Não implementado | Sprint futuro |
 
 ### Telegram — 🟡 20%
 
@@ -250,10 +260,10 @@
 |---|---|
 | Linhas de código (frontend) | ~3500 (src/) |
 | Componentes React | 16 (10 ui + 6 feature) |
-| API Routes | 7 |
-| Páginas | 8 (/login, /crm, /crm/chat, /crm/perfil, /admin, /admin/agentes, /auth/callback, /) |
-| Migrations SQL | 3 |
-| Tabelas Supabase (aplicadas) | 5 |
+| API Routes | 9 |
+| Páginas | 9 (/login, /crm, /crm/chat, /crm/perfil, /admin, /admin/agentes, /admin/conciliacao, /auth/callback, /) |
+| Migrations SQL | 8 |
+| Tabelas Supabase (aplicadas) | 6+ |
 | Tabelas Supabase (pendentes) | 3 |
 | Workflows n8n ativos | 3 (2 funcionais, 1 falhando) |
 | Workflows n8n inativos | 1 |
@@ -565,6 +575,45 @@ Microserviço HTTP independente que recebe base64Image, salva em /tmp/, executa 
 ### Arquivos alterados
 
 - `crm/src/components/crm-sidebar.tsx` — link Conciliação
+
+---
+
+## Sprint 2.3A — Hotfix Arquitetural (2026-07-23)
+
+**Objetivo:** Aplicar melhorias arquiteturais identificadas após Architecture Review: versionamento, novo status, estrutura de lotes.
+
+### Mudanças
+
+- **Migration 00008**: `motor_version` (conciliacoes + logs), lotes (`lote_importacao`, `lote_conciliacao`, `lote_ocr`, `lote_whatsapp`), `AGUARDANDO_DOCUMENTO` no CHECK constraint
+- **Motor**: `MOTOR_VERSION = "2.3.0"` registrado em toda execução; novo status `AGUARDANDO_DOCUMENTO` no type; campos de lote no `ConciliacaoResult`
+- **Logs**: `motor_version` incluído em todo registro de `conciliacao_logs`
+- **Frontend**: indicadores visuais para `aguardando_documento` e `motor_version`
+- **Documentação**: `PROJECT_STATE.md`, `STATUS.md`, `MOTOR_CONCILIACAO.md` atualizados
+
+### Estrutura de Lotes
+
+| Campo | Origem | Estado |
+|---|---|---|
+| `lote_importacao` | UUID do lote de importação | Preparado (null atualmente) |
+| `lote_conciliacao` | UUID da execução do motor | = `lote_execucao` |
+| `lote_ocr` | UUID do lote OCR | Preparado (null atualmente) |
+| `lote_whatsapp` | UUID da sessão WhatsApp | Preparado (null, uso futuro) |
+
+### Arquivos criados
+
+- `crm/supabase/migrations/00008_conciliacao_archecture_refactor.sql`
+
+### Arquivos alterados
+
+- `crm/src/lib/conciliacao.ts` — MOTOR_VERSION, tipos, campos de lote
+- `crm/src/app/admin/conciliacao/page.tsx` — novo status, contadores, motor_version
+- `.ai/PROJECT_STATE.md` — documentação Sprint 2.3A
+- `STATUS.md` — atualizado
+- `docs/conciliacao/MOTOR_CONCILIACAO.md` — versionamento, lotes, novo status
+
+### Build
+
+✅ (a verificar)
 
 ---
 

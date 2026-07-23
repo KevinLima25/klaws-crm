@@ -1,5 +1,6 @@
 # MOTOR DE CONCILIACAO BANCARIA
-## KLAWS CRM — Sprint 2.3
+## KLAWS CRM — Sprint 2.3 / 2.3A
+### Motor Version: 2.3.0
 
 ---
 
@@ -58,6 +59,12 @@ Motor deterministico de conciliacao bancaria que compara registros normalizados 
 - Valor exato (diferenca = R$ 0,00)
 - Registro ainda nao utilizado
 - **Confianca:** deterministica
+
+### AGUARDANDO_DOCUMENTO
+- Indicação de pagamento existe (importação com valor)
+- Nenhum comprovante OCR recebido ainda para executar a conciliação
+- **Confianca:** deterministica
+- **Nota:** Status preparado para integração futura; atualmente não gerado pelo motor
 
 ### C. PENDENTE_SEM_CORRESPONDENCIA (REGRA_C)
 - Nenhum candidato encontrado em nenhuma origem
@@ -130,6 +137,11 @@ Motor deterministico de conciliacao bancaria que compara registros normalizados 
 | `data_destino` | DATE | Data do registro B |
 | `idempotencia_key` | TEXT UNIQUE | Chave de idempotencia |
 | `lote_execucao` | UUID | Identificador do lote |
+| `motor_version` | TEXT | Versão do motor (2.3.0) |
+| `lote_importacao` | UUID | Lote de importação (futuro) |
+| `lote_conciliacao` | UUID | Lote de conciliação (= lote_execucao) |
+| `lote_ocr` | UUID | Lote OCR (futuro) |
+| `lote_whatsapp` | UUID | Lote WhatsApp (futuro) |
 | `conferido` | BOOLEAN | Marcado como conferido |
 | `motivo` | TEXT | Justificativa do resultado |
 | `created_at` | TIMESTAMPTZ | Data de criacao |
@@ -154,6 +166,7 @@ Toda decisao do motor e registrada na tabela `conciliacao_logs`:
 | `conciliacao_id` | FK conciliacoes | Vinculo com o resultado |
 | `acao` | TEXT | Tipo de acao (INICIO_EXECUCAO, MATCH_DOCUMENTO, etc.) |
 | `detalhes` | JSONB | Detalhes da decisao |
+| `motor_version` | TEXT | Versão do motor (2.3.0) |
 | `created_at` | TIMESTAMPTZ | Timestamp |
 
 Acoes registradas: INICIO_EXECUCAO, DADOS_CARREGADOS, MATCH_DOCUMENTO, MATCH_COMPROVANTE_HASH, MATCH_MATRICULA, MATCH_CPF, MATCH_VALORDATA, SUGESTAO_NOME, AMBIGUO_*, CLASSIFICADO_SEM_PAR, COMPROVANTE_SEM_PAR, RESULTADOS_SALVOS, ERRO_SALVAR, ERRO_INESPERADO, FIM_EXECUCAO
@@ -199,6 +212,7 @@ Executa o motor de conciliacao.
     "total_processados": 100,
     "conciliados_exatos": 45,
     "conciliados_documento": 12,
+    "aguardando_documento": 0,
     "pendentes_sem_correspondencia": 20,
     "divergencia_valor": 8,
     "divergencia_data": 5,
@@ -206,8 +220,10 @@ Executa o motor de conciliacao.
     "ambiguos": 2,
     "duplicados": 3,
     "dados_insuficientes": 2,
+    "pendentes_conferencia": 0,
     "erros": [],
-    "executado_em": "2026-07-22T..."
+    "executado_em": "2026-07-22T...",
+    "motor_version": "2.3.0"
   }
 }
 ```
@@ -260,12 +276,22 @@ Resultado: AMBIGUO_MULTIPLOS_CANDIDATOS (REGRA_F)
 
 ## 12. ROLLBACK
 
-Para desfazer uma execucao:
+Para desfazer alteracoes do hotfix 2.3A (reverter migration 00008):
 ```sql
-DELETE FROM public.conciliacoes WHERE lote_execucao = '<uuid_do_lote>';
-```
+ALTER TABLE public.conciliacao_logs DROP COLUMN IF EXISTS motor_version;
+ALTER TABLE public.conciliacoes DROP COLUMN IF EXISTS motor_version;
+ALTER TABLE public.conciliacoes DROP COLUMN IF EXISTS lote_importacao;
+ALTER TABLE public.conciliacoes DROP COLUMN IF EXISTS lote_conciliacao;
+ALTER TABLE public.conciliacoes DROP COLUMN IF EXISTS lote_ocr;
+ALTER TABLE public.conciliacoes DROP COLUMN IF EXISTS lote_whatsapp;
 
-Os registros originais em `importacoes` nunca sao alterados pelo motor.
+-- Restaurar CHECK constraint original (sem AGUARDANDO_DOCUMENTO)
+ALTER TABLE public.conciliacoes DROP CONSTRAINT IF EXISTS conciliacoes_status_check;
+ALTER TABLE public.conciliacoes ADD CONSTRAINT conciliacoes_status_check
+  CHECK (status IN ('CONCILIADO_EXATO','CONCILIADO_DOCUMENTO','PENDENTE_SEM_CORRESPONDENCIA',
+    'DIVERGENCIA_VALOR','DIVERGENCIA_DATA','DIVERGENCIA_VALOR_DATA','AMBIGUO_MULTIPLOS_CANDIDATOS',
+    'DUPLICADO','DADOS_INSUFICIENTES','PENDENTE_CONFERENCIA'));
+```
 
 ---
 
@@ -279,4 +305,5 @@ Os registros originais em `importacoes` nunca sao alterados pelo motor.
 | `crm/src/app/admin/conciliacao/page.tsx` | Interface de execucao |
 | `crm/supabase/migrations/00006_create_conciliacoes.sql` | Migration tabela principal |
 | `crm/supabase/migrations/00007_create_conciliacao_logs.sql` | Migration tabela de auditoria |
+| `crm/supabase/migrations/00008_conciliacao_archecture_refactor.sql` | Migration hotfix arquitetural (motor_version, lotes, AGUARDANDO_DOCUMENTO) |
 | `docs/conciliacao/MOTOR_CONCILIACAO.md` | Este documento |
