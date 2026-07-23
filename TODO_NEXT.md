@@ -1,37 +1,21 @@
 # KLAWS CRM — Próximas Tarefas (Priorizadas)
 
-## ✅ Quality Gate (2026-07-23) — Aprovado
+## ✅ Fase 2 Completa (UX 2.0 / 2.1 / 2.2)
 
-- **Build:** ✅ 27 páginas, 0 TypeScript errors
-- **Lint:** ⚠️ 91 errors (pré-existentes, não bloqueiam)
-- **Correções:** dashboard RPC `.catch()`, conciliacao campos `motor_version`/`lote_*`, `check_state.js` path
+- **UX 2.0 Timeline:** ✅ `/crm/clientes/timeline`
+- **UX 2.1 Touch Targets:** ✅ 44px em todos componentes
+- **UX 2.2 Central de Pendências:** ✅ API + página + sidebar
+- **Review Gate UX 2.3:** ✅ Correções executadas, aguardando autorização para Fase 3
 
-## 🔴 Próximo — UX 2.1 (Touch Targets e Refinamentos Mobile)
+## 🔴 Aguardando Autorização — UX 3.0 (Revisão de OCR e Documentos)
 
-Iniciar conforme `ROADMAP_AUTONOMO.md` → `.ai/sprints/UX_2.1.md`
+Não iniciar sem autorização explícita do usuário (UX_2.3.md, linha 49)
 
-## 🟡 Backlog Técnico (não implementar agora)
+## 🟡 Backlog Técnico
 
 ### 1. Autenticar WAHA Session
-- **O quê:** Escanear QR code via WAHA Dashboard
-- **Risco:** WhatsApp não envia mensagens para o n8n
-
 ### 2. Google Calendar OAuth redirect
-- **Por quê:** AI Agent precisa criar/verificar eventos
-
-### 3. Dashboard RPC
-- **Proposta técnica:** migration 00009 (`get_conciliacao_status_counts`)
-- **Status:** Fallback ativo (mais lento, funcional)
-
-### 4. Timeline pagination
-- **Backlog UX:** cursor pagination futuro
-
-### 5. OCR estruturado
-- **Sprint UX 3.0:** extrair matrícula/CPF/documento/valor/data/hash
-- **Pré-produção:** `comprovantes.matriculas` não populado
-
-### 6. Mover Secrets para Docker Secrets
-- **Risco:** 🔴 Chaves expostas no repositório
-
-### 7. Healthchecks nos Containers
-### 8. Limpeza scripts debug da raiz
+### 3. Timeline pagination (cursor pagination futuro)
+### 4. Mover Secrets para Docker Secrets
+### 5. Healthchecks nos containers
+### 6. Limpeza scripts debug da raiz

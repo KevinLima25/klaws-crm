@@ -342,7 +342,7 @@ export default function AdminPage() {
                     placeholder="Mínimo de 6 caracteres"
                     className="flex h-11 w-full rounded-xl border border-[#2a2d45] bg-[#131520] px-4 py-2 pr-10 text-sm text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-indigo-500"
                   />
-                  <button type="button" onClick={() => setShowPassword(!showPassword)} className="absolute right-1.5 top-1.5 p-2.5 text-slate-400 hover:text-white">
+                  <button type="button" onClick={() => setShowPassword(!showPassword)} className="absolute right-1.5 top-1.5 min-h-11 min-w-11 md:min-h-0 md:min-w-0 flex items-center justify-center p-2.5 text-slate-400 hover:text-white">
                     {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                   </button>
                 </div>

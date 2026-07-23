@@ -61,7 +61,7 @@ export async function GET(req: Request) {
       .select("usuario_baixa, homologado, valor_gerado")
       .neq("usuario_baixa", "")
       .not("usuario_baixa", "is", null),
-    (admin.rpc("get_conciliacao_status_counts" as any).select("*").then(r => r) as Promise<any>).catch(() => ({ data: null, error: null })),
+    admin.rpc("get_conciliacao_status_counts" as any).select("*").then(r => r) as Promise<any>,
     admin.from("importacoes").select("id", { count: "exact", head: true }),
     admin.from("comprovantes").select("id", { count: "exact", head: true }),
     applyPeriod(
@@ -123,22 +123,8 @@ export async function GET(req: Request) {
 
   let conciliationStatusCounts: Record<string, number> = {}
   if (concStatusRes.data && Array.isArray(concStatusRes.data)) {
-    for (const row of concStatusRes.data as any[]) {
+    for (const row of concStatusRes.data) {
       conciliationStatusCounts[row.status] = row.count
-    }
-  } else {
-    const statuses = Object.keys(STATUS_LABELS)
-    const counts = await Promise.all(
-      statuses.map((s) =>
-        admin
-          .from("conciliacoes")
-          .select("id", { count: "exact", head: true })
-          .eq("status", s)
-          .then((r) => ({ status: s, count: r.count || 0 }))
-      )
-    )
-    for (const c of counts) {
-      if (c.count > 0) conciliationStatusCounts[c.status] = c.count
     }
   }
 

@@ -1,20 +1,25 @@
 # Pendências de Execução Autônoma
 
 ## Decisões de Negócio
-- Dashboard: placeholders "Em breve" (Agenda, WhatsApp, OCR, Relatórios) removidos — decidido por serem features não-planejadas na cadeia UX
+- Dashboard: placeholders "Em breve" removidos — features não-planejadas na cadeia UX
 - Timeline: vínculo prioritário por matrícula (nunca nome), com fallback para CPF
 
 ## Decisões Técnicas
-- Dashboard API: `.rpc("get_conciliacao_status_counts")` tentado como primeira opção; fallback para consulta individual por status caso RPC não exista
-- Timeline: consulta em duas chamadas separadas (id_importacao_a + id_importacao_b) em vez de `.or()` complexo na Supabase API
-- Timeline: filtro `days=365` como padrão para evitar explosion de dados
+- Dashboard API: RPC `get_conciliacao_status_counts` criada (migration 00009); fallback eliminado
+- Timeline: consulta em duas chamadas separadas (id_importacao_a + id_importacao_b)
+- Timeline: filtro `days=365` como padrão
 
-## SQL Manual (Nenhuma migration foi criada)
-Nenhuma migration foi necessária nesta execução.
+## SQL Manual
+- Migration 00009: `get_conciliacao_status_counts` RPC function criada
 
-## Pendências para Revisão
-1. Verificar se a RPC `get_conciliacao_status_counts` existe no banco — se não, a consulta fallback está em uso (mais lenta)
-2. A build Next.js local não pode ser executada devido ao caractere `&` no PATH do Windows — impedimento conhecido
-3. Revisar touch targets em modais de troca de senha (admin page) — botão de olho pode ser pequeno
-4. Timeline: considerar paginação ou virtual scrolling se houver muitos eventos (>100)
-5. Verificar se `comprovantes.matriculas` é populado corretamente pelo OCR para o match por matrícula funcionar
+## Pendências Resolvidas (Review Gate UX 2.3)
+1. ✅ RPC `get_conciliacao_status_counts` — migration 00009 criada, fallback eliminado do dashboard
+2. ⏳ OCR `comprovantes.matriculas` — populado pelo N8N externamente; confirmação depende de validação em produção
+3. ✅ Touch target botão olho (admin) — `min-h-11 min-w-11 md:min-h-0 md:min-w-0` aplicado
+4. ⏳ Build local — depende de PATH do Windows (`&`); build funcional via PowerShell
+5. ⏳ Timeline >100 eventos — backlog técnico, sem implementação
+
+## Pendências para Próxima Revisão
+1. Aplicar migration 00009 no banco Supabase (via dashboard SQL editor ou script)
+2. N8N: workflow Agente Comprovante precisa ser ativado para popular `comprovantes.matriculas`
+3. ngrok.exe removido do tracking; reinstalar via chocolatey/scoop se necessário

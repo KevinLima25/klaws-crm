@@ -21,8 +21,21 @@ n8n/data/comprovantes/
 n8n/data/test_samples/
 n8n/n8n-files/
 
+# Binary executables
+ngrok.exe
+*.exe
+
 # Backup files
 backup_test_*.json
+backup_WFCRM*.json
+backups/
+
+# n8n runtime artifacts
+n8n/data/crash.journal
+n8n/data/tmp.sql
+
+# Test artifacts
+crm/test-results/
 
 # OS
 Thumbs.db
