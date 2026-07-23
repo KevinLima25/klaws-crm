@@ -1,14 +1,14 @@
 # KLAWS CRM — PROJECT STATE
 
 **Data:** 2026-07-23
-**Versão:** 2.2
-**Sprint Atual:** UX 2.1 — Touch Targets e Refinamentos Mobile
+**Versão:** 3.1
+**Sprint Atual:** UX 3.1 — Perfil Operacional do Cliente
 **Quality Gate:** ✅ Aprovado
-**Release:** v0.2.0-alpha
-**Commit:** `c02ca36` (UX 1.1/1.2/2.0)
+**Release:** v0.3.0-alpha
+**Commit:** `b4b8dc1` (docs + pre-flight + infra governance)
 **Branch:** `master`
-**Infraestrutura:** ✅ Concluída
-**Status:** Quality Gate aprovado — pronto para UX 2.1
+**Infraestrutura:** 🔄 Em migração — INFRA 3.3
+**Status:** Infraestrutura sendo migrada para diretório canônico. UX 3.1 e 3.2 pendentes. INFRA 3.3 e 3.4 planejados.
 
 ---
 
@@ -147,17 +147,18 @@
 | Bot Token | ❌ Não verificado | — |
 | Integração funcional | ❌ Não existe | — |
 
-### DevOps/Docker — 🟡 65%
+### DevOps/Docker — 🟡 70%
 
 | Item | Status | Obs |
 |---|---|---|
-| Docker Compose | ✅ 4 serviços | waha, n8n, crm, **ocr-service** |
-| Volumes persistentes | ✅ Configurados | n8n data, waha sessions, crm code |
-| Networks | ✅ bridge automation | — |
-| Portas | ✅ 3000, 5678, 3001, 3002 | — |
-| Healthchecks | ❌ Ausentes | Nenhum container |
+| Docker Compose | 🔄 Migrando | 2 projetos separados (wahann + klaws) → unificar em C:\KLAWS\infrastructure |
+| Volumes persistentes | 🔄 n8n data, waha sessions | Migrando bind mounts de Downloads para C:\KLAWS\infrastructure |
+| Networks | 🔄 2 redes separadas | INFRA 3.3 vai unificar klaws_automation + wahann_automation |
+| Portas | ✅ 3001(crm), 5678(n8n), 3002(ocr), 3000(waha) | Mantidas na migração |
+| Healthchecks | ❌ Ausentes | Pendente para INFRA 3.4 |
 | Secrets management | ❌ Hardcoded | N8N_ENCRYPTION_KEY, WAHA_API_KEY no compose |
-| ngrok URL | ⚠️ Hardcoded | Tunnel público instável |
+| ngrok URL | ⚠️ Hardcoded | N8N_WEBHOOK_URL ainda aponta para ngrok |
+| Diretório canônico | 🔄 C:\KLAWS\infrastructure | Sendo criado em INFRA 3.3 |
 | CI/CD | ❌ Não existe | — |
 
 ### Testes — 🔴 10%
@@ -690,3 +691,33 @@ Microserviço HTTP independente que recebe base64Image, salva em /tmp/, executa 
 | `crm/src/app/api/dashboard/route.ts:64` | `.catch()` sem `Promise<any>` — adicionado cast |
 | `crm/src/lib/conciliacao.ts:487` | Push sem `motor_version`/`lote_*` — adicionados |
 | `check_state.js:2` | Path absoluto `C:\Users\...` → `path.join(__dirname, ...)` |
+
+---
+
+## INFRA 3.3 — Migração Controlada da Infraestrutura Docker (2026-07-23)
+
+**Objetivo:** Unificar projetos Compose `wahann` (Downloads) e `klaws` (C:\KLAWS) em `C:\KLAWS\infrastructure`.
+
+### Situação Atual
+
+| Projeto | Arquivo | Serviços |
+|---------|---------|----------|
+| `wahann` | `C:\Users\User\Downloads\Waha N&N\docker-compose.yml` | n8n ✅, ocr-service ✅, waha ❌ Exited, crm (duplicado) |
+| `klaws` | `C:\KLAWS\docker-compose.yml` | crm ✅ |
+
+### Problemas Identificados
+
+1. **Dois projetos Compose** — sem gerenciamento centralizado
+2. **Redes separadas** — `wahann_automation` (n8n, ocr) e `klaws_automation` (crm) não conversam por nome
+3. **Bind mounts no diretório Downloads** — n8n data, waha sessions em `C:\Users\User\Downloads\Waha N&N`
+4. **WAHA Exited** — parado há 57min, restart policy `no` (divergente dos demais)
+5. **ngrok URL hardcoded** — `N8N_WEBHOOK_URL` aponta para tunnel público
+6. **Sem healthchecks** — nenhum container monitorado
+
+### Pendências
+- [ ] Migrar bind mounts para `C:\KLAWS\infrastructure`
+- [ ] Unificar redes
+- [ ] Validar comunicação CRM → n8n → OCR → WAHA
+- [ ] Exportar workflows n8n
+- [ ] Criar documentação de operação (LOCAL_DEVELOPMENT.md)
+- [ ] INFRA 3.4 — Auditoria e Review Gate
