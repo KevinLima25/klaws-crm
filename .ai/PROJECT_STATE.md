@@ -1,14 +1,14 @@
 # KLAWS CRM — PROJECT STATE
 
 **Data:** 2026-07-23
-**Versão:** 3.1
+**Versão:** 3.2
 **Sprint Atual:** UX 3.1 — Perfil Operacional do Cliente
-**Quality Gate:** ✅ Aprovado
+**Quality Gate:** ⏳ Pendente
 **Release:** v0.3.0-alpha
-**Commit:** `b4b8dc1` (docs + pre-flight + infra governance)
+**Commit:** `e66dadb` (infraestrutura + docs)
 **Branch:** `master`
-**Infraestrutura:** 🔄 Em migração — INFRA 3.3
-**Status:** Infraestrutura sendo migrada para diretório canônico. UX 3.1 e 3.2 pendentes. INFRA 3.3 e 3.4 planejados.
+**Infraestrutura:** ✅ Migrada — INFRA 3.3 concluído
+**Status:** INFRA 3.3 concluído. Documentação de arquitetura atualizada com novo modelo de permissões, cargos, comunicação e SLA. INFRA 3.4 pendente. UX 3.1 pendente.
 
 ---
 

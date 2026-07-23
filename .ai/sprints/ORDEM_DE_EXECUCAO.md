@@ -6,7 +6,7 @@
 4. UX_3.0.md — Central de Atendimento ✅
 5. **UX_3.1.md — Perfil Operacional do Cliente**
 6. **UX_3.2.md — Review Gate da Fase 3**
-7. **INFRA_3.3.md — Migração Controlada da Infraestrutura Docker**
+7. INFRA_3.3.md — Migração Controlada da Infraestrutura Docker ✅
 8. **INFRA_3.4.md — Auditoria e Review Gate da Infraestrutura**
 9. **Aguardar confirmação expressa do usuário antes de qualquer UX 4.x**
 

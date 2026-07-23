@@ -494,6 +494,133 @@ Não é permitido concluir uma Sprint deixando a documentação divergente da im
 
 O PROJECT_STATE.md passa a ser a principal fonte de verdade sobre o estado técnico do projeto.
 
+# REGRA 24 — Fluxo de Atendimento (IA)
+
+A IA realiza exclusivamente triagem.
+
+Fluxo obrigatório:
+
+1. Solicitar CPF ou Matrícula do cliente.
+2. Identificar o setor responsável.
+3. Encaminhar para a fila do setor.
+4. Informar a posição na fila.
+5. Após um funcionário assumir o atendimento, a IA deixa de responder.
+
+A IA nunca executa atendimento direto.
+
+---
+
+# REGRA 25 — WhatsApp
+
+## Oficial
+
+- Atendimento distribuído por fila.
+- Conversas encerradas retornam para a fila em novos contatos.
+- Não existe vínculo permanente entre cliente e funcionário.
+
+## Individual
+
+- Cada funcionário possui número próprio de WhatsApp.
+- Líder/Coordenador pode:
+  - marcar funcionário como disponível/indisponível
+  - enviar conversa para fila
+  - redirecionar conversa para funcionário específico
+
+---
+
+# REGRA 26 — SLA
+
+- Contagem do SLA inicia somente após atribuição do atendimento.
+- 10 minutos sem resposta gera alerta ao Líder/Coordenador.
+
+---
+
+# REGRA 27 — Dashboard
+
+- Nunca apagar a última versão válida.
+- Atualização só substitui a anterior após validação completa.
+- Em caso de falha:
+  - manter dados anteriores
+  - exibir alerta para usuários autorizados
+  - permitir upload manual
+
+---
+
+# REGRA 28 — Permissões e Cargos
+
+Modelo exclusivamente por cargo.
+
+Não existem exceções por usuário.
+
+## Escopos
+
+- SELF: apenas próprios registros
+- SECTOR: registros do setor
+- GLOBAL: todos os registros
+- TECHNICAL_GLOBAL: acesso técnico irrestrito (não operacional)
+
+## Mapeamento de Cargos
+
+| Cargo | Escopo |
+|-------|--------|
+| Gerente | GLOBAL |
+| Assistente Financeiro | GLOBAL |
+| Líder | SECTOR |
+| Coordenador | SECTOR |
+| Vendedor | SELF |
+| Auxiliar Cobrança | SELF |
+| Pós Venda | SELF |
+| Conciliador | SELF |
+
+## SUPER ADMIN
+
+Perfil técnico. Não é cargo operacional.
+
+Responsável por:
+- configurações
+- integrações
+- Docker
+- Playwright
+- WAHA
+- N8N
+- Banco
+- Logs
+- Backup
+- Ambiente
+
+---
+
+# REGRA 29 — Timeline
+
+Somente Líder e superiores possuem acesso à Timeline.
+
+---
+
+# REGRA 30 — Isolamento de Dados
+
+- Funcionário nunca visualiza clientes de outro funcionário.
+- Líder visualiza somente clientes do seu setor.
+- Financeiro e Gerente possuem visão global.
+
+---
+
+# REGRA 31 — Arquitetura Monocliente
+
+O projeto é específico para Cartão de Todos Campinas Sul.
+
+Não realizar abstrações para multiempresa.
+
+Cada franquia futura utilizará recursos próprios:
+- VPS própria
+- Banco próprio
+- N8N próprio
+- Google Drive próprio
+- WAHA próprio
+
+O código pode ser reutilizado como base, mas sem alterar a arquitetura atual.
+
+---
+
 # REGRA FINAL
 
 A Sprint possui prioridade sobre qualquer decisão da IA.

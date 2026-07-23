@@ -633,3 +633,189 @@ Power BI
 Este documento é a referência oficial da arquitetura do KLAWS CRM.
 
 Nenhuma IA pode tomar decisões arquiteturais diferentes sem autorização explícita.
+
+---
+
+# COMUNICAÇÃO — FLUXO DE ATENDIMENTO
+
+A IA realiza exclusivamente triagem.
+
+Fluxo:
+
+Cliente → Plataforma
+↓
+IA: solicita CPF ou Matrícula
+↓
+IA: identifica setor
+↓
+IA: encaminha para fila do setor
+↓
+IA: informa posição na fila
+↓
+Funcionário assume atendimento
+↓
+IA deixa de responder
+
+A IA nunca executa atendimento direto.
+
+Nunca responde dúvidas.
+
+Nunca realiza ações sem supervisão.
+
+---
+
+# WHATSAPP OFICIAL
+
+O atendimento é distribuído por fila.
+
+Conversas encerradas retornam para a fila em novos contatos.
+
+Não existe vínculo permanente entre cliente e funcionário no WhatsApp Oficial.
+
+---
+
+# WHATSAPP INDIVIDUAL
+
+Cada funcionário possui número próprio.
+
+O Líder/Coordenador pode:
+
+- marcar funcionário como disponível/indisponível
+- enviar conversa para fila
+- redirecionar conversa para funcionário específico
+
+---
+
+# SLA
+
+A contagem do SLA inicia somente após a atribuição do atendimento ao funcionário.
+
+10 minutos sem resposta gera alerta ao Líder/Coordenador.
+
+---
+
+# DASHBOARD — REGRA DE ATUALIZAÇÃO
+
+Nunca apagar a última versão válida do dashboard.
+
+Atualização só substitui a anterior após validação completa.
+
+Em caso de falha:
+
+- manter dados anteriores
+- exibir alerta para usuários autorizados
+- permitir upload manual
+
+---
+
+# HISTÓRICO — ARMAZENAMENTO
+
+## Supabase
+
+Armazena:
+
+- SQL
+- mensagens
+- auditoria
+- metadados
+- fotos de perfil
+
+## Google Drive
+
+Armazena:
+
+- comprovantes
+- imagens
+- PDFs
+- vídeos
+- áudios
+- demais arquivos
+
+---
+
+# PERMISSÕES
+
+Modelo exclusivamente por cargo.
+
+Não existem exceções por usuário.
+
+## Escopos
+
+| Escopo | Abrangência |
+|--------|-------------|
+| SELF | Apenas próprios registros |
+| SECTOR | Registros do setor |
+| GLOBAL | Todos os registros |
+| TECHNICAL_GLOBAL | Acesso técnico irrestrito (não operacional) |
+
+## Cargos
+
+| Cargo | Escopo |
+|-------|--------|
+| Gerente | GLOBAL |
+| Assistente Financeiro | GLOBAL |
+| Líder | SECTOR |
+| Coordenador | SECTOR |
+| Vendedor | SELF |
+| Auxiliar Cobrança | SELF |
+| Pós Venda | SELF |
+| Conciliador | SELF |
+
+## SUPER ADMIN
+
+Perfil técnico.
+
+Não é cargo operacional.
+
+Responsável por:
+
+- configurações
+- integrações
+- Docker
+- Playwright
+- WAHA
+- N8N
+- Banco
+- Logs
+- Backup
+- Ambiente
+
+## Timeline
+
+Somente Líder e superiores possuem acesso à Timeline.
+
+---
+
+# SEGURANÇA — ISOLAMENTO DE DADOS
+
+Funcionário nunca visualiza clientes de outro funcionário.
+
+Líder visualiza somente clientes do seu setor.
+
+Financeiro e Gerente possuem visão global.
+
+---
+
+# ARQUITETURA — ESCOPO
+
+O projeto é específico para Cartão de Todos Campinas Sul.
+
+Não realizar abstrações para outros segmentos neste momento.
+
+Nenhuma arquitetura multiempresa.
+
+## Expansão futura (cada franquia)
+
+Cada futura franquia utilizará recursos próprios e independentes:
+
+- VPS própria
+- Banco próprio
+- N8N próprio
+- Google Drive próprio
+- WAHA próprio
+
+O código atual poderá ser reutilizado como base.
+
+Nenhuma alteração na arquitetura atual para suportar multiempresa.
+
+---
