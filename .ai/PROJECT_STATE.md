@@ -502,6 +502,58 @@ Microserviço HTTP independente que recebe base64Image, salva em /tmp/, executa 
 
 ---
 
+## Sprint 2.3 — Motor de Conciliação (2026-07-22)
+
+**Objetivo:** Projetar e implementar o motor determinístico de conciliação bancária para comparar registros normalizados de diferentes origens.
+
+### Mudanças
+
+- **Migration 00006**: tabela `conciliacoes` com 10 status, JSONB para campos e divergências, chave única de idempotência, RLS para admin
+- **Motor (`src/lib/conciliacao.ts`)**: 8 regras determinísticas (A-H), índices O(1) por matrícula/CPF/documento, idempotência via `idempotencia_key`
+- **API `/api/conciliacao`**: POST para executar motor (com filtros opcionais), GET para consultar resultados com paginação e filtro por status
+- **API `/api/conciliacao/teste`**: 14 cenários de teste automatizados com dados controlados, criação/validação/limpeza em memória
+- **Frontend `/admin/conciliacao`**: botão Executar, sumário com 10 contadores, tabela paginada com filtro por status
+- **Sidebar**: link "Conciliação" na seção Administração
+- **Documentação**: `docs/conciliacao/MOTOR_CONCILIACAO.md` completo (regras, tolerâncias, modelo, exemplos, rollback)
+
+### Regras implementadas
+
+| Regra | Status | Descrição |
+|---|---|---|
+| A | CONCILIADO_EXATO | Matrícula/CPF + valor + data exatos |
+| B | CONCILIADO_DOCUMENTO | Documento exato + valor dentro da tolerância |
+| C | PENDENTE_SEM_CORRESPONDENCIA | Nenhum candidato válido |
+| D | DIVERGENCIA_VALOR | Key match + valor diferente |
+| E | DIVERGENCIA_DATA | Key match + data diferente |
+| F | AMBIGUO_MULTIPLOS_CANDIDATOS | Múltiplos candidatos para mesma regra |
+| G | DUPLICADO | Documento/hash já utilizado |
+| H | DADOS_INSUFICIENTES | Sem matrícula/CPF/documento |
+
+### Tolerâncias (pendentes de aprovação)
+
+- Monetária: R$ 0,02 para regra documento
+- Data: ± 1 dia para compatibilidade
+- Timezone: America/Sao_Paulo (UTC-3)
+
+### Build
+
+✅ 25 páginas compiladas com sucesso (0 erros TypeScript)
+
+### Arquivos criados
+
+- `crm/supabase/migrations/00006_create_conciliacoes.sql`
+- `crm/src/lib/conciliacao.ts`
+- `crm/src/app/api/conciliacao/route.ts`
+- `crm/src/app/api/conciliacao/teste/route.ts`
+- `crm/src/app/admin/conciliacao/page.tsx`
+- `docs/conciliacao/MOTOR_CONCILIACAO.md`
+
+### Arquivos alterados
+
+- `crm/src/components/crm-sidebar.tsx` — link Conciliação
+
+---
+
 ## Sprint 1.9 — Estabilização da Plataforma (2026-07-22)
 
 **Objetivo:** Finalizar a estabilização da versão v0.1.0-alpha para iniciar o Sprint 2 (Conciliação Bancária).

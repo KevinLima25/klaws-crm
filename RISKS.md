@@ -10,6 +10,8 @@
 | **n8n webhookId=null** | Webhooks podem parar de funcionar após restart | Média | Path-based webhooks funcionam na prática; reativar workflow se necessário |
 | **Secrets hardcoded no docker-compose.yml** | N8N_ENCRYPTION_KEY, WAHA_API_KEY expostos no versionamento | Alta | Pendente — mover para Docker Secrets ou .env não versionado |
 | **Migration 003 não aplicada (parcial)** | agentes_config tem dados, message_buffer pode não ter RLS | Baixa | Migration contém INSERTs que já foram executados (duplicatas ignoradas por ON CONFLICT) |
+| **Tolerâncias de conciliação não aprovadas** | Regras podem produzir falsos positivos/negativos se tolerâncias inadequadas | Média | Pendente — revisar tolerância monetária (R$ 0,02), data (±1 dia) e timezone com usuário |
+| **Conciliação sem comprovantes OCR** | Comprovantes processados pelo OCR não participam da conciliação automática | Média | Pendente — integrar tabela comprovantes como fonte adicional |
 
 ## Dívida Técnica
 
@@ -31,4 +33,5 @@
 | Mover credenciais para Docker Secrets | Segurança |
 | Adicionar healthchecks nos containers | Monitoramento |
 | Implementar Agente Conciliação | Fluxo completo de conciliação bancária |
+| **✅ Motor de Conciliação implementado (Sprint 2.3)** | Motor determinístico com 8 regras, idempotência e 14 cenários de teste |
 | Migrar para HTTP Request node (quando bug for corrigido) | Consistência visual do workflow |

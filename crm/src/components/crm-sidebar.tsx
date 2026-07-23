@@ -222,6 +222,17 @@ export function CrmSidebar() {
               <Upload className="h-4 w-4" />
               Importar
             </Link>
+            <Link
+              href="/admin/conciliacao"
+              className={`flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-all duration-200 ${
+                pathname === "/admin/conciliacao"
+                  ? "bg-[#1f2136] text-white shadow-sm"
+                  : "text-slate-400 hover:text-slate-100 hover:bg-[#171928]"
+              }`}
+            >
+              <CheckSquare className="h-4 w-4" />
+              Conciliação
+            </Link>
           </div>
         )}
       </div>

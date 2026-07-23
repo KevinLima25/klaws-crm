@@ -1,6 +1,15 @@
 # KLAWS CRM — Próximas Tarefas (Priorizadas)
 
-## 🔴 Sprint 2 — Conciliação Bancária
+## ✅ Sprint 2.3 — Motor de Conciliação Bancária (CONCLUÍDO)
+
+- **Motor determinístico implementado** com 8 regras (A-H)
+- **API `/api/conciliacao`** funcional (POST executar, GET consultar)
+- **Frontend `/admin/conciliacao`** funcional
+- **14 cenários de teste** automatizados
+- **Migration 00006** criada (tabela conciliacoes)
+- **Documentação completa** em `docs/conciliacao/MOTOR_CONCILIACAO.md`
+
+## 🔴 Sprint 2 — Próximos Passos
 
 ### 1. Autenticar WAHA Session
 - **O quê:** Escanear QR code via WAHA Dashboard para ativar recebimento de mensagens WhatsApp

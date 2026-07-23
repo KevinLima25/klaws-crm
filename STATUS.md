@@ -42,3 +42,11 @@
 - **Bug:** `webhookId=null` para todos os webhooks — limitação do n8n 2.30.7
 - **Status:** Webhooks funcionam mesmo com `webhookId=null` — o registro persiste via `webhook_entity` (path-based)
 - **Recomendação:** Após restart do n8n, verificar se webhooks estão registrados. Reactivar workflow se necessário.
+
+## Conciliação Bancária (Sprint 2.3)
+- **Motor:** ✅ Funcional (8 regras determinísticas A-H)
+- **API:** ✅ `POST /api/conciliacao` (executar), `GET /api/conciliacao` (consultar)
+- **Testes:** ✅ 14 cenários via `POST /api/conciliacao/teste`
+- **Frontend:** ✅ `/admin/conciliacao` (executar + visualizar resultados)
+- **Migration:** ✅ 00006 aplicável (tabela conciliacoes com RLS)
+- **Build:** ✅ 25 páginas, 0 erros TypeScript
