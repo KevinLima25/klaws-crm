@@ -539,6 +539,20 @@ Microserviço HTTP independente que recebe base64Image, salva em /tmp/, executa 
 
 ✅ 25 páginas compiladas com sucesso (0 erros TypeScript)
 
+### Sprint 2.3R — Refinamento (2026-07-22)
+
+- **Tolerância monetária:** R$ 0,00 (exato, aprovado pelo usuário)
+- **Integração comprovantes OCR:** tabela `comprovantes` participa da conciliação
+- **Prioridade de identificadores:** Documento > Hash Comprovante > Matrícula > CPF > Valor+Data > Nome
+- **Conciliação por fases:** 6 fases iterativas com índices O(1)
+- **Auditoria:** migration 00007 (`conciliacao_logs`) registra cada decisão
+- **Idempotência:** hash SHA256 determinístico como chave única
+- **Logs de auditoria:** INICIO_EXECUCAO, MATCH_DOCUMENTO, MATCH_COMPROVANTE_HASH, SUGESTAO_NOME, etc.
+
+### Arquivos adicionais (2.3R)
+
+- `crm/supabase/migrations/00007_create_conciliacao_logs.sql` — tabela de auditoria
+
 ### Arquivos criados
 
 - `crm/supabase/migrations/00006_create_conciliacoes.sql`
